@@ -17,9 +17,10 @@ class MyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         super().end_headers()
     
     def do_GET(self):
-        # Redirect root to map.html
-        if self.path == '/' or self.path == '':
-            self.path = '/map.html'
+        # Redirect root to map.html, preserving query parameters
+        if self.path.startswith('/?') or self.path == '/':
+            query = self.path[1:] if self.path.startswith('/?') else ''
+            self.path = '/map.html' + query
         return super().do_GET()
 
 class ReusableTCPServer(socketserver.TCPServer):
