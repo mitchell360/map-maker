@@ -80,11 +80,7 @@ async function getWalkingRoute(start,end){
     })
     .catch(e=>console.error('Border load error:',e));
   
-  // Add overlays to map by default
-  countryBorders.addTo(map);
-  walkingPaths.addTo(map);
-  travelTimeLayer.addTo(map);
-  
+  // Overlays are OFF by default but available in layer control
   const overlays={
     'Country Borders':countryBorders,
     'Walking Paths':walkingPaths,
@@ -153,9 +149,10 @@ async function getWalkingRoute(start,end){
       if(weeks>0)timeStr+=`${weeks} week${weeks>1?'s':''} `;
       if(days>0||weeks===0)timeStr+=`${days} day${days!==1?'s':''}`;
       
-      // Create travel time display element
+      // Create travel time display element (hidden by default)
       const travelTimeDiv=document.createElement('div');
       travelTimeDiv.className='distance-info';
+      travelTimeDiv.style.display='none';
       travelTimeDiv.innerHTML=`<strong>Estimated Travel Time:</strong> ${timeStr.trim()} <span style="font-size:12px;color:#6b7280">(${distKm.toFixed(0)} km via walking & boat)</span>`;
       document.body.appendChild(travelTimeDiv);
       
