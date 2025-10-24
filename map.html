@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <title>URL Map</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.3.4/dist/leaflet.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet-dvf@0.2.5/dist/css/dvf.css">
   <style>
     html,body,#map{height:100%;margin:0;padding:0}
@@ -27,8 +27,12 @@
 </head>
 <body>
 <div id="map"></div>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet@1.3.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/leaflet-dvf@0.2.5/dist/leaflet-dvf.min.js"></script>
+<script>
+// Debug: check what DVF actually exports
+console.log('DVF exports:',Object.keys(L).filter(k=>!k.match(/^[a-z]|version|noConflict/)).sort());
+</script>
 <script>
 function qs(name){const u=new URL(location.href);return u.searchParams.get(name);}
 async function geocode(q){
@@ -74,16 +78,16 @@ function assignDirection(locations,index){
       nearby.push({index:i,dist:dist});
     }
   }
-  if(nearby.length===0)return 'ne';
+  if(nearby.length===0)return L.CalloutLine.DIRECTION.NE;
   nearby.sort((a,b)=>a.dist-b.dist);
   const angles=nearby.map(n=>{
     const dx=locations[n.index].lon-loc.lon;
     const dy=locations[n.index].lat-loc.lat;
     return Math.atan2(dy,dx)*180/Math.PI;
   });
-  const directions=['ne','se','sw','nw'];
+  const directions=[L.CalloutLine.DIRECTION.NE,L.CalloutLine.DIRECTION.SE,L.CalloutLine.DIRECTION.SW,L.CalloutLine.DIRECTION.NW];
   const dirAngles=[45,135,-135,-45];
-  let bestDir='ne';
+  let bestDir=L.CalloutLine.DIRECTION.NE;
   let maxMinDist=0;
   for(let d=0;d<directions.length;d++){
     let minDist=360;
@@ -179,26 +183,40 @@ function assignDirection(locations,index){
   }
   
   // Second pass: create callout markers with intelligent directions
+  console.log('Creating',chronoData.length,'chronological markers');
+  console.log('Available L.Call*:',Object.keys(L).filter(k=>k.startsWith('Call')));
   for(let i=0;i<chronoData.length;i++){
     const d=chronoData[i];
     const dir=assignDirection(chronoData,i);
+    console.log('Marker',i,'at',d.lat,d.lon,'direction:',dir);
     const html=d.lines.map(l=>'<span class="popup-line">'+l+'</span>').join('');
     const mk=L.marker([d.lat,d.lon],{icon:blueIcon})
       .addTo(map)
       .bindPopup(html,{autoClose:true,closeOnClick:false});
     allMarkers.push(mk);
-    const callout=new L.Callout(new L.LatLng(d.lat,d.lon),{
-      arrow:false,
-      direction:dir,
-      lineStyle:'arc',
-      weight:2,
-      color:'#0369a1',
-      fillColor:'#0369a1',
-      fillOpacity:0.9,
-      size:new L.Point(100,30),
-      icon:new L.DivIcon({html:d.name,className:'callout-label-blue'})
-    });
-    map.addLayer(callout);
+    try{
+      console.log('Creating callout for',d.name,'typeof L.Callout:',typeof L.Callout);
+      const callout=new L.Callout(new L.LatLng(d.lat,d.lon),{
+        arrow:false,
+        direction:dir,
+        lineStyle:L.CalloutLine.LINESTYLE.ARC,
+        weight:2,
+        color:'#0369a1',
+        fillColor:'#0369a1',
+        fillOpacity:0.9,
+        size:new L.Point(80,60),
+        icon:new L.DivIcon({
+          html:d.name,
+          className:'callout-label-blue',
+          iconSize:new L.Point(100,30),
+          iconAnchor:new L.Point(50,15)
+        })
+      });
+      map.addLayer(callout);
+      console.log('Callout',i,'created successfully');
+    }catch(e){
+      console.error('Callout error for',d.name,':',e.message,e.stack);
+    }
   }
   
   // Process reference locations (red markers)
@@ -233,13 +251,18 @@ function assignDirection(locations,index){
     const callout=new L.Callout(new L.LatLng(d.lat,d.lon),{
       arrow:false,
       direction:dir,
-      lineStyle:'arc',
+      lineStyle:L.CalloutLine.LINESTYLE.ARC,
       weight:2,
       color:'#dc2626',
       fillColor:'#dc2626',
       fillOpacity:0.9,
-      size:new L.Point(100,30),
-      icon:new L.DivIcon({html:d.name,className:'callout-label-red'})
+      size:new L.Point(80,60),
+      icon:new L.DivIcon({
+        html:d.name,
+        className:'callout-label-red',
+        iconSize:new L.Point(100,30),
+        iconAnchor:new L.Point(50,15)
+      })
     });
     map.addLayer(callout);
   }
