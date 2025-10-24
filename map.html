@@ -92,8 +92,8 @@ async function getWalkingRoute(start,end){
   };
   L.control.layers(baseLayers,overlays,{collapsed:true}).addTo(map);
 
-  const defaultPoints='Rome,Italy|Ephesus,Turkey';
-  const defaultLabels='Rome%0A62 AD: Rome, Capitol of the Roman Empire%0A2025 AD: Rome, Italy%0A%0APaul was held under house arrest in Rome from approximately AD 60 to 62|Ephesus%0A52-54 AD: Ephesus, Asia Minor%0A2025 AD: Selçuk, Turkey%0A%0APaul ministered in Ephesus for approximately three years during his third missionary journey';
+  const defaultPoints='Antioch,Turkey|Philippi,Greece|Ephesus,Turkey|Rome,Italy';
+  const defaultLabels='Antioch%0A47-48 AD: Antioch, Syria%0A2025 AD: Antakya, Turkey%0A%0AAntioch served as the primary mission base for Paul\'s ministry to the Gentiles and was where believers were first called Christians|Philippi%0A49-50 AD: Philippi, Macedonia%0A2025 AD: Filippoi, Greece%0A%0APhilippi was the first European city where Paul established a Christian congregation during his second missionary journey|Ephesus%0A52-54 AD: Ephesus, Asia Minor%0A2025 AD: Selçuk, Turkey%0A%0APaul ministered in Ephesus for approximately three years during his third missionary journey|Rome%0A62 AD: Rome, Capitol of the Roman Empire%0A2025 AD: Rome, Italy%0A%0APaul was held under house arrest in Rome from approximately AD 60 to 62';
   
   const points=(qs('points')||defaultPoints).split('|').filter(Boolean);
   const labels=(qs('labels')||defaultLabels).split('|');
