@@ -5,6 +5,7 @@
   <title>URL Map</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet-dvf@0.2.5/dist/css/dvf.css">
   <style>
     html,body,#map{height:100%;margin:0;padding:0}
     .leaflet-popup-content{font:22px/1.5 "Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:#1f2937;letter-spacing:0;margin:0;min-width:400px}
@@ -20,11 +21,14 @@
     .marker-label-reference{background:#dc2626;color:#ffffff;border:none;box-shadow:0 2px 8px rgba(0,0,0,.3);font-weight:700;font-size:16px;padding:6px 12px;border-radius:4px}
     .marker-label-reference::before{border-top-color:#dc2626!important}
     .distance-info{position:absolute;z-index:1000;bottom:12px;left:50%;transform:translateX(-50%);background:#fff;padding:10px 16px;border-radius:6px;font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;box-shadow:0 2px 12px rgba(0,0,0,.2);border:2px solid #0369a1}
+    .callout-label-blue{background:#0369a1;color:#ffffff;padding:8px 14px;border-radius:4px;font-weight:700;font-size:15px;white-space:nowrap;box-shadow:0 2px 10px rgba(0,0,0,.25);border:2px solid #ffffff}
+    .callout-label-red{background:#dc2626;color:#ffffff;padding:8px 14px;border-radius:4px;font-weight:700;font-size:15px;white-space:nowrap;box-shadow:0 2px 10px rgba(0,0,0,.25);border:2px solid #ffffff}
   </style>
 </head>
 <body>
 <div id="map"></div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/leaflet-dvf@0.2.5/dist/leaflet-dvf.min.js"></script>
 <script>
 function qs(name){const u=new URL(location.href);return u.searchParams.get(name);}
 async function geocode(q){
@@ -50,6 +54,50 @@ async function getWalkingRoute(start,end){
     }
   }catch(e){console.error('Route error:',e);}
   return null;
+}
+function getDistance(lat1,lon1,lat2,lon2){
+  const R=6371;
+  const dLat=(lat2-lat1)*Math.PI/180;
+  const dLon=(lon2-lon1)*Math.PI/180;
+  const a=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)*Math.sin(dLon/2);
+  const c=2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+  return R*c;
+}
+function assignDirection(locations,index){
+  const loc=locations[index];
+  const proximityThreshold=200;
+  const nearby=[];
+  for(let i=0;i<locations.length;i++){
+    if(i===index)continue;
+    const dist=getDistance(loc.lat,loc.lon,locations[i].lat,locations[i].lon);
+    if(dist<proximityThreshold){
+      nearby.push({index:i,dist:dist});
+    }
+  }
+  if(nearby.length===0)return 'ne';
+  nearby.sort((a,b)=>a.dist-b.dist);
+  const angles=nearby.map(n=>{
+    const dx=locations[n.index].lon-loc.lon;
+    const dy=locations[n.index].lat-loc.lat;
+    return Math.atan2(dy,dx)*180/Math.PI;
+  });
+  const directions=['ne','se','sw','nw'];
+  const dirAngles=[45,135,-135,-45];
+  let bestDir='ne';
+  let maxMinDist=0;
+  for(let d=0;d<directions.length;d++){
+    let minDist=360;
+    for(let a of angles){
+      let diff=Math.abs(a-dirAngles[d]);
+      if(diff>180)diff=360-diff;
+      minDist=Math.min(minDist,diff);
+    }
+    if(minDist>maxMinDist){
+      maxMinDist=minDist;
+      bestDir=directions[d];
+    }
+  }
+  return bestDir;
 }
 (async function(){
   const map=L.map('map',{zoomControl:true}).setView([20,0],2);
@@ -110,8 +158,9 @@ async function getWalkingRoute(start,end){
   const allMarkers=[];
   const chronoCoords=[];
   const chronoNames=[];
+  const chronoData=[];
   
-  // Process chronological locations (blue markers)
+  // First pass: collect all chronological location data
   for(let i=0;i<chronoPoints.length;i++){
     const q=chronoPoints[i].trim();
     if(!q)continue;
@@ -126,15 +175,34 @@ async function getWalkingRoute(start,end){
     const lines=label.split('\n');
     const locationName=lines[0]||q;
     chronoNames.push(locationName);
-    const html=lines.map(l=>'<span class="popup-line">'+l+'</span>').join('');
-    const mk=L.marker([coord.lat,coord.lon],{icon:blueIcon})
+    chronoData.push({lat:coord.lat,lon:coord.lon,name:locationName,label:label,lines:lines});
+  }
+  
+  // Second pass: create callout markers with intelligent directions
+  for(let i=0;i<chronoData.length;i++){
+    const d=chronoData[i];
+    const dir=assignDirection(chronoData,i);
+    const html=d.lines.map(l=>'<span class="popup-line">'+l+'</span>').join('');
+    const mk=L.marker([d.lat,d.lon],{icon:blueIcon})
       .addTo(map)
-      .bindPopup(html,{autoClose:true,closeOnClick:false})
-      .bindTooltip(locationName,{permanent:true,direction:'top',className:'marker-label'});
+      .bindPopup(html,{autoClose:true,closeOnClick:false});
     allMarkers.push(mk);
+    const callout=new L.Callout(new L.LatLng(d.lat,d.lon),{
+      arrow:false,
+      direction:dir,
+      lineStyle:'arc',
+      weight:2,
+      color:'#0369a1',
+      fillColor:'#0369a1',
+      fillOpacity:0.9,
+      size:new L.Point(100,30),
+      icon:new L.DivIcon({html:d.name,className:'callout-label-blue'})
+    });
+    map.addLayer(callout);
   }
   
   // Process reference locations (red markers)
+  const refData=[];
   for(let i=0;i<refPoints.length;i++){
     const q=refPoints[i].trim();
     if(!q)continue;
@@ -147,12 +215,33 @@ async function getWalkingRoute(start,end){
     const label=labelEncoded.replace(/%0A/gi,'\n');
     const lines=label.split('\n');
     const locationName=lines[0]||q;
-    const html=lines.map(l=>'<span class="popup-line">'+l+'</span>').join('');
-    const mk=L.marker([coord.lat,coord.lon],{icon:redIcon})
+    refData.push({lat:coord.lat,lon:coord.lon,name:locationName,label:label,lines:lines});
+  }
+  
+  // Combine all locations for direction calculation
+  const allLocs=[...chronoData,...refData];
+  
+  // Create reference callout markers
+  for(let i=0;i<refData.length;i++){
+    const d=refData[i];
+    const dir=assignDirection(allLocs,chronoData.length+i);
+    const html=d.lines.map(l=>'<span class="popup-line">'+l+'</span>').join('');
+    const mk=L.marker([d.lat,d.lon],{icon:redIcon})
       .addTo(map)
-      .bindPopup(html,{autoClose:true,closeOnClick:false})
-      .bindTooltip(locationName,{permanent:true,direction:'top',className:'marker-label-reference'});
+      .bindPopup(html,{autoClose:true,closeOnClick:false});
     allMarkers.push(mk);
+    const callout=new L.Callout(new L.LatLng(d.lat,d.lon),{
+      arrow:false,
+      direction:dir,
+      lineStyle:'arc',
+      weight:2,
+      color:'#dc2626',
+      fillColor:'#dc2626',
+      fillOpacity:0.9,
+      size:new L.Point(100,30),
+      icon:new L.DivIcon({html:d.name,className:'callout-label-red'})
+    });
+    map.addLayer(callout);
   }
   
   // Draw walking paths between consecutive chronological locations only
