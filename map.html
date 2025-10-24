@@ -45,7 +45,7 @@ async function geocode(q){
 
   const points=(qs('points')||'').split('|').filter(Boolean);
   const labels=(qs('labels')||'').split('|');
-  const toOpen=qs('open')||'';
+  const toOpen=qs('open')||'all';
 
   const markers=[];
   for(let i=0;i<points.length;i++){
