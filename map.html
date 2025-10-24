@@ -18,17 +18,10 @@
     .marker-label{background:#0369a1;color:#ffffff;border:none;box-shadow:0 2px 8px rgba(0,0,0,.3);font-weight:700;font-size:16px;padding:6px 12px;border-radius:4px}
     .marker-label::before{border-top-color:#0369a1!important}
     .distance-info{position:absolute;z-index:1000;bottom:12px;left:50%;transform:translateX(-50%);background:#fff;padding:10px 16px;border-radius:6px;font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;box-shadow:0 2px 12px rgba(0,0,0,.2);border:2px solid #0369a1}
-    .notice{position:absolute;z-index:1000;top:8px;left:8px;background:#fff;padding:6px 8px;border-radius:4px;font:12px/1.3 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;box-shadow:0 1px 4px rgba(0,0,0,.15)}
-    .notice a{color:#0645AD;text-decoration:none}
-    .notice code{background:#f5f5f5;padding:1px 3px;border-radius:3px}
   </style>
 </head>
 <body>
 <div id="map"></div>
-<div class="notice">
-  Use query params. Example<br>
-  <code>?points=Rome,Italy|Ephesus,Turkey&amp;labels=Rome%0A62 AD...&amp;path=false&amp;travelTime=false</code>
-</div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 function qs(name){const u=new URL(location.href);return u.searchParams.get(name);}
@@ -62,8 +55,16 @@ async function getWalkingRoute(start,end){
   const osm=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'});
   const baseLayers={'Clean':positron,'Detailed':osm};
   
-  // Create country borders overlay layer
+  // Create overlay layers
   const countryBorders=L.layerGroup();
+  const walkingPaths=L.layerGroup();
+  const travelTimeLayer=L.layerGroup();
+  
+  // Add invisible placeholders so layers show in control
+  walkingPaths.addLayer(L.circle([0,0],{radius:1,opacity:0}));
+  travelTimeLayer.addLayer(L.circle([0,0],{radius:1,opacity:0}));
+  
+  // Load country borders
   fetch('https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_110m_admin_0_countries.geojson')
     .then(r=>r.json())
     .then(data=>{
@@ -78,9 +79,16 @@ async function getWalkingRoute(start,end){
     })
     .catch(e=>console.error('Border load error:',e));
   
-  // Add to map by default and make it toggleable
+  // Add overlays to map by default
   countryBorders.addTo(map);
-  const overlays={'Country Borders':countryBorders};
+  walkingPaths.addTo(map);
+  travelTimeLayer.addTo(map);
+  
+  const overlays={
+    'Country Borders':countryBorders,
+    'Walking Paths':walkingPaths,
+    'Travel Time':travelTimeLayer
+  };
   L.control.layers(baseLayers,overlays,{collapsed:true}).addTo(map);
 
   const defaultPoints='Rome,Italy|Ephesus,Turkey';
@@ -89,8 +97,6 @@ async function getWalkingRoute(start,end){
   const points=(qs('points')||defaultPoints).split('|').filter(Boolean);
   const labels=(qs('labels')||defaultLabels).split('|');
   const toOpen=qs('open')||'all';
-  const showTravelTime=qs('travelTime')!=='false';
-  const showPath=qs('path')!=='false';
 
   const markers=[];
   const coords=[];
@@ -115,16 +121,14 @@ async function getWalkingRoute(start,end){
     markers.push(mk);
   }
   
-  // Draw walking paths between consecutive locations if enabled
+  // Draw walking paths between consecutive locations
   let totalDistance=0;
-  if(showPath){
-    for(let i=0;i<coords.length-1;i++){
-      const route=await getWalkingRoute(coords[i],coords[i+1]);
-      if(route&&route.geometry){
-        const latlngs=route.geometry.coordinates.map(c=>[c[1],c[0]]);
-        L.polyline(latlngs,{color:'#0369a1',weight:3,opacity:0.7}).addTo(map);
-        totalDistance+=route.distance;
-      }
+  for(let i=0;i<coords.length-1;i++){
+    const route=await getWalkingRoute(coords[i],coords[i+1]);
+    if(route&&route.geometry){
+      const latlngs=route.geometry.coordinates.map(c=>[c[1],c[0]]);
+      L.polyline(latlngs,{color:'#0369a1',weight:3,opacity:0.7}).addTo(walkingPaths);
+      totalDistance+=route.distance;
     }
   }
   
@@ -132,8 +136,8 @@ async function getWalkingRoute(start,end){
     const g=new L.featureGroup(markers);
     map.fitBounds(g.getBounds().pad(0.18));
     
-    // Show estimated travel time if routes were drawn and enabled
-    if(totalDistance>0&&showTravelTime){
+    // Create travel time display
+    if(totalDistance>0){
       const distKm=totalDistance/1000;
       // Ancient travel: ~25 km/day on foot, boats ~100 km/day on favorable conditions
       // Assume mix: 60% walking, 40% by boat for Mediterranean routes
@@ -147,10 +151,20 @@ async function getWalkingRoute(start,end){
       let timeStr='';
       if(weeks>0)timeStr+=`${weeks} week${weeks>1?'s':''} `;
       if(days>0||weeks===0)timeStr+=`${days} day${days!==1?'s':''}`;
-      const infoDiv=document.createElement('div');
-      infoDiv.className='distance-info';
-      infoDiv.innerHTML=`<strong>Estimated Travel Time:</strong> ${timeStr.trim()} <span style="font-size:12px;color:#6b7280">(${distKm.toFixed(0)} km via walking & boat)</span>`;
-      document.body.appendChild(infoDiv);
+      
+      // Create travel time display element
+      const travelTimeDiv=document.createElement('div');
+      travelTimeDiv.className='distance-info';
+      travelTimeDiv.innerHTML=`<strong>Estimated Travel Time:</strong> ${timeStr.trim()} <span style="font-size:12px;color:#6b7280">(${distKm.toFixed(0)} km via walking & boat)</span>`;
+      document.body.appendChild(travelTimeDiv);
+      
+      // Show/hide travel time display based on layer toggle
+      map.on('overlayadd',function(e){
+        if(e.name==='Travel Time')travelTimeDiv.style.display='block';
+      });
+      map.on('overlayremove',function(e){
+        if(e.name==='Travel Time')travelTimeDiv.style.display='none';
+      });
     }
   }else{map.setView([37.8,20],5);}
 })();
