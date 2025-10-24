@@ -58,9 +58,10 @@ async function getWalkingRoute(start,end){
 }
 (async function(){
   const map=L.map('map',{zoomControl:true}).setView([20,0],2);
-  const positron=L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap © CartoDB'}).addTo(map);
+  const voyager=L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap © CartoDB'}).addTo(map);
+  const positron=L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap © CartoDB'});
   const osm=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'});
-  const baseLayers={'Clean':positron,'Detailed':osm};
+  const baseLayers={'Borders':voyager,'Clean':positron,'Detailed':osm};
   L.control.layers(baseLayers,null,{collapsed:true}).addTo(map);
 
   const defaultPoints='Rome,Italy|Ephesus,Turkey';
