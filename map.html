@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <title>URL Map</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.3.4/dist/leaflet.css">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet-dvf@0.2.5/dist/css/dvf.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
   <style>
     html,body,#map{height:100%;margin:0;padding:0}
     .leaflet-popup-content{font:22px/1.5 "Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:#1f2937;letter-spacing:0;margin:0;min-width:400px}
@@ -21,18 +21,24 @@
     .marker-label-reference{background:#dc2626;color:#ffffff;border:none;box-shadow:0 2px 8px rgba(0,0,0,.3);font-weight:700;font-size:16px;padding:6px 12px;border-radius:4px}
     .marker-label-reference::before{border-top-color:#dc2626!important}
     .distance-info{position:absolute;z-index:1000;bottom:12px;left:50%;transform:translateX(-50%);background:#fff;padding:10px 16px;border-radius:6px;font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;box-shadow:0 2px 12px rgba(0,0,0,.2);border:2px solid #0369a1}
-    .callout-label-blue{background:#0369a1;color:#ffffff;padding:8px 14px;border-radius:4px;font-weight:700;font-size:15px;white-space:nowrap;box-shadow:0 2px 10px rgba(0,0,0,.25);border:2px solid #ffffff}
-    .callout-label-red{background:#dc2626;color:#ffffff;padding:8px 14px;border-radius:4px;font-weight:700;font-size:15px;white-space:nowrap;box-shadow:0 2px 10px rgba(0,0,0,.25);border:2px solid #ffffff}
+    .label-tooltip{
+      background:rgba(255,255,255,0.95)!important;
+      border:2px solid!important;
+      border-radius:6px!important;
+      padding:6px 12px!important;
+      font:bold 14px/1.4 "Segoe UI",Roboto,Helvetica,Arial,sans-serif!important;
+      box-shadow:0 4px 12px rgba(0,0,0,0.25)!important;
+      white-space:nowrap!important;
+    }
+    .label-tooltip-blue{border-color:#0369a1!important;color:#0369a1!important}
+    .label-tooltip-red{border-color:#dc2626!important;color:#dc2626!important}
+    .leaflet-tooltip.label-tooltip:before{display:none!important}
   </style>
 </head>
 <body>
 <div id="map"></div>
-<script src="https://unpkg.com/leaflet@1.3.4/dist/leaflet.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/leaflet-dvf@0.2.5/dist/leaflet-dvf.min.js"></script>
-<script>
-// Debug: check what DVF actually exports
-console.log('DVF exports:',Object.keys(L).filter(k=>!k.match(/^[a-z]|version|noConflict/)).sort());
-</script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script>
 function qs(name){const u=new URL(location.href);return u.searchParams.get(name);}
 async function geocode(q){
@@ -67,7 +73,7 @@ function getDistance(lat1,lon1,lat2,lon2){
   const c=2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
   return R*c;
 }
-function assignDirection(locations,index){
+function getLeaderLineOffset(locations,index){
   const loc=locations[index];
   const proximityThreshold=200;
   const nearby=[];
@@ -78,18 +84,23 @@ function assignDirection(locations,index){
       nearby.push({index:i,dist:dist});
     }
   }
-  if(nearby.length===0)return L.CalloutLine.DIRECTION.NE;
+  const offsets=[
+    {lat:0.8,lon:1.2},
+    {lat:-0.8,lon:1.2},
+    {lat:-0.8,lon:-1.2},
+    {lat:0.8,lon:-1.2}
+  ];
+  if(nearby.length===0)return offsets[0];
   nearby.sort((a,b)=>a.dist-b.dist);
   const angles=nearby.map(n=>{
     const dx=locations[n.index].lon-loc.lon;
     const dy=locations[n.index].lat-loc.lat;
     return Math.atan2(dy,dx)*180/Math.PI;
   });
-  const directions=[L.CalloutLine.DIRECTION.NE,L.CalloutLine.DIRECTION.SE,L.CalloutLine.DIRECTION.SW,L.CalloutLine.DIRECTION.NW];
   const dirAngles=[45,135,-135,-45];
-  let bestDir=L.CalloutLine.DIRECTION.NE;
+  let bestIdx=0;
   let maxMinDist=0;
-  for(let d=0;d<directions.length;d++){
+  for(let d=0;d<4;d++){
     let minDist=360;
     for(let a of angles){
       let diff=Math.abs(a-dirAngles[d]);
@@ -98,13 +109,15 @@ function assignDirection(locations,index){
     }
     if(minDist>maxMinDist){
       maxMinDist=minDist;
-      bestDir=directions[d];
+      bestIdx=d;
     }
   }
-  return bestDir;
+  return offsets[bestIdx];
 }
 (async function(){
+  console.log('Script started');
   const map=L.map('map',{zoomControl:true}).setView([20,0],2);
+  console.log('Map initialized');
   const dare=L.tileLayer('https://dh.gu.se/tiles/imperium/{z}/{x}/{y}.png',{minZoom:4,maxZoom:11,attribution:'© <a href="https://dh.gu.se/dare/">Digital Atlas of the Roman Empire</a>'}).addTo(map);
   const positron=L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap © CartoDB'});
   const osm=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'});
@@ -182,42 +195,36 @@ function assignDirection(locations,index){
     chronoData.push({lat:coord.lat,lon:coord.lon,name:locationName,label:label,lines:lines});
   }
   
-  // Second pass: create callout markers with intelligent directions
-  console.log('Creating',chronoData.length,'chronological markers');
-  console.log('Available L.Call*:',Object.keys(L).filter(k=>k.startsWith('Call')));
+  // Second pass: create markers with custom leader lines
+  console.log('Creating',chronoData.length,'chronological markers with leader lines');
   for(let i=0;i<chronoData.length;i++){
     const d=chronoData[i];
-    const dir=assignDirection(chronoData,i);
-    console.log('Marker',i,'at',d.lat,d.lon,'direction:',dir);
+    console.log(`Marker ${i}: ${d.name} at [${d.lat}, ${d.lon}]`);
+    const offset=getLeaderLineOffset(chronoData,i);
     const html=d.lines.map(l=>'<span class="popup-line">'+l+'</span>').join('');
     const mk=L.marker([d.lat,d.lon],{icon:blueIcon})
       .addTo(map)
       .bindPopup(html,{autoClose:true,closeOnClick:false});
     allMarkers.push(mk);
-    try{
-      console.log('Creating callout for',d.name,'typeof L.Callout:',typeof L.Callout);
-      const callout=new L.Callout(new L.LatLng(d.lat,d.lon),{
-        arrow:false,
-        direction:dir,
-        lineStyle:L.CalloutLine.LINESTYLE.ARC,
-        weight:2,
-        color:'#0369a1',
-        fillColor:'#0369a1',
-        fillOpacity:0.9,
-        size:new L.Point(80,60),
-        icon:new L.DivIcon({
-          html:d.name,
-          className:'callout-label-blue',
-          iconSize:new L.Point(100,30),
-          iconAnchor:new L.Point(50,15)
-        })
-      });
-      map.addLayer(callout);
-      console.log('Callout',i,'created successfully');
-    }catch(e){
-      console.error('Callout error for',d.name,':',e.message,e.stack);
-    }
+    const labelPos=[d.lat+offset.lat,d.lon+offset.lon];
+    console.log(`Label ${i} at [${labelPos[0]}, ${labelPos[1]}]`);
+    L.polyline([[d.lat,d.lon],labelPos],{
+      color:'#0369a1',
+      weight:2,
+      opacity:0.7,
+      dashArray:'4,6'
+    }).addTo(map);
+    L.tooltip({
+      permanent:true,
+      direction:'center',
+      className:'label-tooltip label-tooltip-blue',
+      offset:[0,0]
+    })
+    .setLatLng(labelPos)
+    .setContent(d.name)
+    .addTo(map);
   }
+  console.log(`Created ${allMarkers.length} markers total`);
   
   // Process reference locations (red markers)
   const refData=[];
@@ -239,32 +246,31 @@ function assignDirection(locations,index){
   // Combine all locations for direction calculation
   const allLocs=[...chronoData,...refData];
   
-  // Create reference callout markers
+  // Create reference markers with custom leader lines
   for(let i=0;i<refData.length;i++){
     const d=refData[i];
-    const dir=assignDirection(allLocs,chronoData.length+i);
+    const offset=getLeaderLineOffset(allLocs,chronoData.length+i);
     const html=d.lines.map(l=>'<span class="popup-line">'+l+'</span>').join('');
     const mk=L.marker([d.lat,d.lon],{icon:redIcon})
       .addTo(map)
       .bindPopup(html,{autoClose:true,closeOnClick:false});
     allMarkers.push(mk);
-    const callout=new L.Callout(new L.LatLng(d.lat,d.lon),{
-      arrow:false,
-      direction:dir,
-      lineStyle:L.CalloutLine.LINESTYLE.ARC,
-      weight:2,
+    const labelPos=[d.lat+offset.lat,d.lon+offset.lon];
+    L.polyline([[d.lat,d.lon],labelPos],{
       color:'#dc2626',
-      fillColor:'#dc2626',
-      fillOpacity:0.9,
-      size:new L.Point(80,60),
-      icon:new L.DivIcon({
-        html:d.name,
-        className:'callout-label-red',
-        iconSize:new L.Point(100,30),
-        iconAnchor:new L.Point(50,15)
-      })
-    });
-    map.addLayer(callout);
+      weight:2,
+      opacity:0.7,
+      dashArray:'4,6'
+    }).addTo(map);
+    L.tooltip({
+      permanent:true,
+      direction:'center',
+      className:'label-tooltip label-tooltip-red',
+      offset:[0,0]
+    })
+    .setLatLng(labelPos)
+    .setContent(d.name)
+    .addTo(map);
   }
   
   // Draw walking paths between consecutive chronological locations only
@@ -282,9 +288,12 @@ function assignDirection(locations,index){
     }
   }
   
+  console.log(`allMarkers.length = ${allMarkers.length}`);
   if(allMarkers.length){
     const g=new L.featureGroup(allMarkers);
-    map.fitBounds(g.getBounds().pad(0.18));
+    const bounds=g.getBounds();
+    console.log('Fitting bounds:',bounds);
+    map.fitBounds(bounds.pad(0.18));
     
     // Create travel time display
     if(totalDistance>0){

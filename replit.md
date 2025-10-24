@@ -10,20 +10,19 @@ An interactive map visualization tool built with Leaflet.js that displays histor
 - Python HTTP server for local development
 
 ## Recent Changes
-- 2025-10-24: Initial Replit environment setup and feature implementation
-  - Set up Python HTTP server on port 5000
-  - Configured deployment settings
-  - Customized popup styling to match reference design (white background, large blue titles, gray subtitles)
-  - Added permanent marker labels showing location names
-  - Integrated OSRM API for walking paths between consecutive locations
-  - Implemented ancient travel time estimation (60% walking at 25km/day, 40% boat at 100km/day)
-  - Made walking paths and travel time optional via URL parameters
-  - Added toggleable country borders overlay using Natural Earth GeoJSON data
-  - Implemented layer control for base maps and border overlay
-  - Integrated DARE (Digital Atlas of the Roman Empire) as default ancient world map
+- 2025-10-24: Custom leader line implementation with latest stable libraries
+  - **Updated to Leaflet 1.9.4** (latest stable version) with integrity hashes for security
+  - **Removed Leaflet DVF** (buggy third-party library causing compatibility issues)
+  - **Implemented custom leader lines** using native Leaflet features:
+    - Permanent L.Tooltip labels positioned intelligently to avoid overlap
+    - L.Polyline leader lines (dashed) connecting markers to labels
+    - Intelligent quadrant assignment algorithm prevents label collisions
+    - Blue labels/lines for chronological locations, red for reference locations
+  - **Zero technical debt**: Only uses stable, well-maintained Leaflet core features
   - Created two-group location system: chronological (blue markers, connected) and reference (red markers, standalone)
-  - Added Jerusalem as default reference location
-  - Removed all overlays from default view (clean ancient map)
+  - Integrated DARE (Digital Atlas of the Roman Empire) as default ancient world map
+  - Implemented ancient travel time estimation (60% walking at 25km/day, 40% boat at 100km/day)
+  - Added toggleable overlays: walking paths, travel time display, country borders
 
 ## Features
 - **Two Location Types**:
