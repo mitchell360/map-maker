@@ -27,7 +27,7 @@
 <div id="map"></div>
 <div class="notice">
   Use query params. Example<br>
-  <code>?points=Rome,Italy|Ephesus,Turkey&amp;labels=Rome%0A62 AD: Rome, Capitol of the Roman Empire%0A2025 AD: Rome, Italy%0A%0APaul was held under house arrest in Rome from approximately AD 60 to 62|Ephesus%0A52-54 AD: Ephesus, Asia Minor%0A2025 AD: Selçuk, Turkey%0A%0APaul ministered in Ephesus for approximately three years during his third missionary journey</code>
+  <code>?points=Rome,Italy|Ephesus,Turkey&amp;labels=Rome%0A62 AD...&amp;travelTime=false</code>
 </div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
@@ -69,6 +69,7 @@ async function getWalkingRoute(start,end){
   const points=(qs('points')||defaultPoints).split('|').filter(Boolean);
   const labels=(qs('labels')||defaultLabels).split('|');
   const toOpen=qs('open')||'all';
+  const showTravelTime=qs('travelTime')!=='false';
 
   const markers=[];
   const coords=[];
@@ -108,8 +109,8 @@ async function getWalkingRoute(start,end){
     const g=new L.featureGroup(markers);
     map.fitBounds(g.getBounds().pad(0.18));
     
-    // Show estimated travel time if routes were drawn
-    if(totalDistance>0){
+    // Show estimated travel time if routes were drawn and enabled
+    if(totalDistance>0&&showTravelTime){
       const distKm=totalDistance/1000;
       // Ancient travel: ~25 km/day on foot, boats ~100 km/day on favorable conditions
       // Assume mix: 60% walking, 40% by boat for Mediterranean routes
