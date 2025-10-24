@@ -27,7 +27,7 @@
 <div id="map"></div>
 <div class="notice">
   Use query params. Example<br>
-  <code>?points=Rome,Italy|Ephesus,Turkey&amp;labels=Rome%0A62 AD...&amp;travelTime=false</code>
+  <code>?points=Rome,Italy|Ephesus,Turkey&amp;labels=Rome%0A62 AD...&amp;path=false&amp;travelTime=false</code>
 </div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
@@ -70,6 +70,7 @@ async function getWalkingRoute(start,end){
   const labels=(qs('labels')||defaultLabels).split('|');
   const toOpen=qs('open')||'all';
   const showTravelTime=qs('travelTime')!=='false';
+  const showPath=qs('path')!=='false';
 
   const markers=[];
   const coords=[];
@@ -94,14 +95,16 @@ async function getWalkingRoute(start,end){
     markers.push(mk);
   }
   
-  // Draw walking paths between consecutive locations
+  // Draw walking paths between consecutive locations if enabled
   let totalDistance=0;
-  for(let i=0;i<coords.length-1;i++){
-    const route=await getWalkingRoute(coords[i],coords[i+1]);
-    if(route&&route.geometry){
-      const latlngs=route.geometry.coordinates.map(c=>[c[1],c[0]]);
-      L.polyline(latlngs,{color:'#0369a1',weight:3,opacity:0.7}).addTo(map);
-      totalDistance+=route.distance;
+  if(showPath){
+    for(let i=0;i<coords.length-1;i++){
+      const route=await getWalkingRoute(coords[i],coords[i+1]);
+      if(route&&route.geometry){
+        const latlngs=route.geometry.coordinates.map(c=>[c[1],c[0]]);
+        L.polyline(latlngs,{color:'#0369a1',weight:3,opacity:0.7}).addTo(map);
+        totalDistance+=route.distance;
+      }
     }
   }
   
