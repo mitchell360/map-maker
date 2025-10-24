@@ -96,17 +96,20 @@ async function getWalkingRoute(start,end){
 
   const defaultChronoPoints='Antioch,Turkey|Philippi,Greece|Ephesus,Turkey|Rome,Italy';
   const defaultChronoLabels='Antioch%0A47-48 AD: Antioch, Syria%0A2025 AD: Antakya, Turkey%0A%0AAntioch served as the primary mission base for Paul\'s ministry to the Gentiles and was where believers were first called Christians|Philippi%0A49-50 AD: Philippi, Macedonia%0A2025 AD: Filippoi, Greece%0A%0APhilippi was the first European city where Paul established a Christian congregation during his second missionary journey|Ephesus%0A52-54 AD: Ephesus, Asia Minor%0A2025 AD: Selçuk, Turkey%0A%0APaul ministered in Ephesus for approximately three years during his third missionary journey|Rome%0A62 AD: Rome, Capitol of the Roman Empire%0A2025 AD: Rome, Italy%0A%0APaul was held under house arrest in Rome from approximately AD 60 to 62';
+  const defaultRefPoints='Jerusalem,Israel';
+  const defaultRefLabels='Jerusalem%0A33 AD: Jerusalem, Judea%0A2025 AD: Jerusalem, Israel%0A%0AThe Church\'s birthplace and site of Pentecost';
   
   // Chronological locations (blue markers, connected with paths)
-  const chronoPoints=(qs('chrono')||qs('points')||defaultChronoPoints).split('|').filter(Boolean);
-  const chronoLabels=(qs('chronoLabels')||qs('labels')||defaultChronoLabels).split('|');
+  const chronoPoints=(qs('chrono')||defaultChronoPoints).split('|').filter(Boolean);
+  const chronoLabels=(qs('chronoLabels')||defaultChronoLabels).split('|');
   
   // Reference locations (red markers, no paths)
-  const refPoints=(qs('reference')||'').split('|').filter(Boolean);
-  const refLabels=(qs('referenceLabels')||'').split('|');
+  const refPoints=(qs('reference')||defaultRefPoints).split('|').filter(Boolean);
+  const refLabels=(qs('referenceLabels')||defaultRefLabels).split('|');
 
   const allMarkers=[];
   const chronoCoords=[];
+  const chronoNames=[];
   
   // Process chronological locations (blue markers)
   for(let i=0;i<chronoPoints.length;i++){
@@ -122,6 +125,7 @@ async function getWalkingRoute(start,end){
     const label=labelEncoded.replace(/%0A/gi,'\n');
     const lines=label.split('\n');
     const locationName=lines[0]||q;
+    chronoNames.push(locationName);
     const html=lines.map(l=>'<span class="popup-line">'+l+'</span>').join('');
     const mk=L.marker([coord.lat,coord.lon],{icon:blueIcon})
       .addTo(map)
@@ -183,10 +187,11 @@ async function getWalkingRoute(start,end){
       if(days>0||weeks===0)timeStr+=`${days} day${days!==1?'s':''}`;
       
       // Create travel time display element (hidden by default)
+      const pathStr=chronoNames.join(' → ');
       const travelTimeDiv=document.createElement('div');
       travelTimeDiv.className='distance-info';
       travelTimeDiv.style.display='none';
-      travelTimeDiv.innerHTML=`<strong>Estimated Travel Time:</strong> ${timeStr.trim()} <span style="font-size:12px;color:#6b7280">(${distKm.toFixed(0)} km via walking & boat)</span>`;
+      travelTimeDiv.innerHTML=`<strong>Estimated Travel Time:</strong> ${timeStr.trim()} <span style="font-size:12px;color:#6b7280">(${distKm.toFixed(0)} km via walking & boat)</span><br><span style="font-size:13px;color:#374151;margin-top:4px;display:block;">${pathStr}</span>`;
       document.body.appendChild(travelTimeDiv);
       
       // Show/hide travel time display based on layer toggle
