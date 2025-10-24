@@ -157,12 +157,16 @@ async function getWalkingRoute(start,end){
   
   // Draw walking paths between consecutive chronological locations only
   let totalDistance=0;
+  const legDistances=[];
   for(let i=0;i<chronoCoords.length-1;i++){
     const route=await getWalkingRoute(chronoCoords[i],chronoCoords[i+1]);
     if(route&&route.geometry){
       const latlngs=route.geometry.coordinates.map(c=>[c[1],c[0]]);
       L.polyline(latlngs,{color:'#0369a1',weight:3,opacity:0.7}).addTo(walkingPaths);
       totalDistance+=route.distance;
+      legDistances.push(route.distance);
+    }else{
+      legDistances.push(0);
     }
   }
   
@@ -172,26 +176,37 @@ async function getWalkingRoute(start,end){
     
     // Create travel time display
     if(totalDistance>0){
-      const distKm=totalDistance/1000;
-      // Ancient travel: ~25 km/day on foot, boats ~100 km/day on favorable conditions
-      // Assume mix: 60% walking, 40% by boat for Mediterranean routes
-      const walkingDist=distKm*0.6;
-      const boatDist=distKm*0.4;
-      const walkingDays=walkingDist/25;
-      const boatDays=boatDist/100;
-      const totalDays=Math.ceil(walkingDays+boatDays);
-      const weeks=Math.floor(totalDays/7);
-      const days=totalDays%7;
-      let timeStr='';
-      if(weeks>0)timeStr+=`${weeks} week${weeks>1?'s':''} `;
-      if(days>0||weeks===0)timeStr+=`${days} day${days!==1?'s':''}`;
+      const formatTime=(distanceMeters)=>{
+        const distKm=distanceMeters/1000;
+        const walkingDist=distKm*0.6;
+        const boatDist=distKm*0.4;
+        const walkingDays=walkingDist/25;
+        const boatDays=boatDist/100;
+        const totalDays=Math.ceil(walkingDays+boatDays);
+        const weeks=Math.floor(totalDays/7);
+        const days=totalDays%7;
+        let timeStr='';
+        if(weeks>0)timeStr+=`${weeks} week${weeks>1?'s':''} `;
+        if(days>0||weeks===0)timeStr+=`${days} day${days!==1?'s':''}`;
+        return {timeStr:timeStr.trim(),distKm:distKm.toFixed(0),totalDays};
+      };
+      
+      // Build legs display
+      let legsHtml='';
+      for(let i=0;i<legDistances.length;i++){
+        if(legDistances[i]>0){
+          const legTime=formatTime(legDistances[i]);
+          legsHtml+=`<div style="font-size:13px;color:#374151;margin-top:2px;">${chronoNames[i]} → ${chronoNames[i+1]}: <span style="color:#6b7280;">${legTime.timeStr} (${legTime.distKm} km)</span></div>`;
+        }
+      }
+      
+      const totalTime=formatTime(totalDistance);
       
       // Create travel time display element (hidden by default)
-      const pathStr=chronoNames.join(' → ');
       const travelTimeDiv=document.createElement('div');
       travelTimeDiv.className='distance-info';
       travelTimeDiv.style.display='none';
-      travelTimeDiv.innerHTML=`<strong>Estimated Travel Time:</strong> ${timeStr.trim()} <span style="font-size:12px;color:#6b7280">(${distKm.toFixed(0)} km via walking & boat)</span><br><span style="font-size:13px;color:#374151;margin-top:4px;display:block;">${pathStr}</span>`;
+      travelTimeDiv.innerHTML=`<strong>Estimated Travel Time:</strong> ${totalTime.timeStr} <span style="font-size:12px;color:#6b7280">(${totalTime.distKm} km via walking & boat)</span><div style="margin-top:8px;">${legsHtml}</div>`;
       document.body.appendChild(travelTimeDiv);
       
       // Show/hide travel time display based on layer toggle
