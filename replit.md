@@ -35,7 +35,8 @@ An interactive map visualization tool built with Leaflet.js that displays histor
 - **Walking Paths**: Optional blue paths showing walking routes between chronological locations (OSRM API)
 - **Travel Time**: Optional ancient travel time estimation for chronological journey
 - **Multiple Base Maps**:
-  - Ancient World (DARE) - Default, authentic Roman Empire geography
+  - Ancient World (DARE) - Default, Digital Atlas of the Roman Empire
+  - Ancient World II (CAWM) - Consortium of Ancient World Mappers
   - Modern Clean - Minimal contemporary map
   - Modern Detailed - Full modern map with roads
 - **Toggleable Overlays**:
@@ -49,6 +50,11 @@ An interactive map visualization tool built with Leaflet.js that displays histor
   - CSS styling for map, popups, markers, and labels
   - JavaScript for geocoding, routing, and map rendering
   - Leaflet.js integration via CDN
+- Map Tile Sources:
+  - DARE (Digital Atlas of the Roman Empire) - dh.gu.se
+  - CAWM (Consortium of Ancient World Mappers) - cawm.lib.uiowa.edu
+  - CartoDB Positron (modern clean)
+  - OpenStreetMap (modern detailed)
 - APIs Used:
   - OpenStreetMap Nominatim API for geocoding locations
   - OSRM (routing.openstreetmap.de) for walking route calculations

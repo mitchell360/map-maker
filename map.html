@@ -54,9 +54,10 @@ async function getWalkingRoute(start,end){
 (async function(){
   const map=L.map('map',{zoomControl:true}).setView([20,0],2);
   const dare=L.tileLayer('https://dh.gu.se/tiles/imperium/{z}/{x}/{y}.png',{minZoom:4,maxZoom:11,attribution:'© <a href="https://dh.gu.se/dare/">Digital Atlas of the Roman Empire</a>'}).addTo(map);
+  const cawm=L.tileLayer('http://cawm.lib.uiowa.edu/tiles/{z}/{x}/{y}.png',{minZoom:4,maxZoom:11,attribution:'© <a href="http://cawm.lib.uiowa.edu">CAWM</a> CC BY 4.0'});
   const positron=L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap © CartoDB'});
   const osm=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'});
-  const baseLayers={'Ancient World':dare,'Modern (Clean)':positron,'Modern (Detailed)':osm};
+  const baseLayers={'Ancient World':dare,'Ancient World II':cawm,'Modern (Clean)':positron,'Modern (Detailed)':osm};
   
   // Custom marker icons
   const blueIcon=L.icon({iconUrl:'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',shadowUrl:'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',iconSize:[25,41],iconAnchor:[12,41],popupAnchor:[1,-34],shadowSize:[41,41]});
