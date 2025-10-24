@@ -7,13 +7,13 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <style>
     html,body,#map{height:100%;margin:0;padding:0}
-    .leaflet-popup-content{font:18px/1.5 "Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:#1f2937;letter-spacing:0;margin:0}
-    .leaflet-popup-content-wrapper{border-radius:8px;padding:24px 28px;background:#ffffff;border:3px solid #1f2937;box-shadow:0 10px 40px rgba(0,0,0,.3)}
+    .leaflet-popup-content{font:22px/1.5 "Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:#1f2937;letter-spacing:0;margin:0;min-width:400px}
+    .leaflet-popup-content-wrapper{border-radius:8px;padding:32px 36px;background:#ffffff;border:3px solid #1f2937;box-shadow:0 10px 40px rgba(0,0,0,.3);max-width:600px}
     .leaflet-popup-tip{background:#ffffff;border:3px solid #1f2937;box-shadow:0 8px 20px rgba(0,0,0,.2)}
-    .popup-line{display:block;white-space:pre-wrap;margin-bottom:12px;line-height:1.4}
-    .popup-line:first-child{font-weight:700;font-size:42px;color:#0369a1;letter-spacing:-.01em;margin-bottom:8px;line-height:1.1}
-    .popup-line:nth-child(2),.popup-line:nth-child(3){color:#6b7280;font-size:16px;margin-bottom:6px}
-    .popup-line:nth-child(n+4){color:#1f2937;font-size:18px;margin-top:16px;margin-bottom:8px}
+    .popup-line{display:block;white-space:pre-wrap;margin-bottom:14px;line-height:1.5}
+    .popup-line:first-child{font-weight:700;font-size:52px;color:#0369a1;letter-spacing:-.01em;margin-bottom:12px;line-height:1.1}
+    .popup-line:nth-child(2),.popup-line:nth-child(3){color:#6b7280;font-size:20px;margin-bottom:8px}
+    .popup-line:nth-child(n+4){color:#1f2937;font-size:22px;margin-top:20px;margin-bottom:10px}
     .popup-line:last-child{margin-bottom:0}
     .notice{position:absolute;z-index:1000;top:8px;left:8px;background:#fff;padding:6px 8px;border-radius:4px;font:12px/1.3 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;box-shadow:0 1px 4px rgba(0,0,0,.15)}
     .notice a{color:#0645AD;text-decoration:none}
@@ -24,7 +24,7 @@
 <div id="map"></div>
 <div class="notice">
   Use query params. Example<br>
-  <code>?points=Rome,Italy|Ephesus,Turkey&amp;labels=Rome%0Amodern%20Rome%0APaul%20in%20prison|Ephesus%0Amodern%20Selcuk%0AAudience%20church&amp;open=all</code>
+  <code>?points=Rome,Italy|Ephesus,Turkey&amp;labels=Rome%0A62 AD: Rome, Capitol of the Roman Empire%0A2025 AD: Rome, Italy%0A%0APaul was held under house arrest in Rome from approximately AD 60 to 62|Ephesus%0A52-54 AD: Ephesus, Asia Minor%0A2025 AD: Selçuk, Turkey%0A%0APaul ministered in Ephesus for approximately three years during his third missionary journey</code>
 </div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
@@ -44,8 +44,11 @@ async function geocode(q){
   const baseLayers={'OSM':osm,'Toner Lite':tonerLite};
   L.control.layers(baseLayers,null,{collapsed:true}).addTo(map);
 
-  const points=(qs('points')||'').split('|').filter(Boolean);
-  const labels=(qs('labels')||'').split('|');
+  const defaultPoints='Rome,Italy|Ephesus,Turkey';
+  const defaultLabels='Rome%0A62 AD: Rome, Capitol of the Roman Empire%0A2025 AD: Rome, Italy%0A%0APaul was held under house arrest in Rome from approximately AD 60 to 62|Ephesus%0A52-54 AD: Ephesus, Asia Minor%0A2025 AD: Selçuk, Turkey%0A%0APaul ministered in Ephesus for approximately three years during his third missionary journey';
+  
+  const points=(qs('points')||defaultPoints).split('|').filter(Boolean);
+  const labels=(qs('labels')||defaultLabels).split('|');
   const toOpen=qs('open')||'all';
 
   const markers=[];
