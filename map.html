@@ -17,6 +17,8 @@
     .popup-line:last-child{margin-bottom:0}
     .marker-label{background:#0369a1;color:#ffffff;border:none;box-shadow:0 2px 8px rgba(0,0,0,.3);font-weight:700;font-size:16px;padding:6px 12px;border-radius:4px}
     .marker-label::before{border-top-color:#0369a1!important}
+    .marker-label-reference{background:#dc2626;color:#ffffff;border:none;box-shadow:0 2px 8px rgba(0,0,0,.3);font-weight:700;font-size:16px;padding:6px 12px;border-radius:4px}
+    .marker-label-reference::before{border-top-color:#dc2626!important}
     .distance-info{position:absolute;z-index:1000;bottom:12px;left:50%;transform:translateX(-50%);background:#fff;padding:10px 16px;border-radius:6px;font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;box-shadow:0 2px 12px rgba(0,0,0,.2);border:2px solid #0369a1}
   </style>
 </head>
@@ -56,6 +58,10 @@ async function getWalkingRoute(start,end){
   const osm=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'});
   const baseLayers={'Ancient World':dare,'Modern (Clean)':positron,'Modern (Detailed)':osm};
   
+  // Custom marker icons
+  const blueIcon=L.icon({iconUrl:'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',shadowUrl:'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',iconSize:[25,41],iconAnchor:[12,41],popupAnchor:[1,-34],shadowSize:[41,41]});
+  const redIcon=L.icon({iconUrl:'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',shadowUrl:'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',iconSize:[25,41],iconAnchor:[12,41],popupAnchor:[1,-34],shadowSize:[41,41]});
+  
   // Create overlay layers
   const countryBorders=L.layerGroup();
   const walkingPaths=L.layerGroup();
@@ -88,40 +94,67 @@ async function getWalkingRoute(start,end){
   };
   L.control.layers(baseLayers,overlays,{collapsed:true}).addTo(map);
 
-  const defaultPoints='Antioch,Turkey|Philippi,Greece|Ephesus,Turkey|Rome,Italy';
-  const defaultLabels='Antioch%0A47-48 AD: Antioch, Syria%0A2025 AD: Antakya, Turkey%0A%0AAntioch served as the primary mission base for Paul\'s ministry to the Gentiles and was where believers were first called Christians|Philippi%0A49-50 AD: Philippi, Macedonia%0A2025 AD: Filippoi, Greece%0A%0APhilippi was the first European city where Paul established a Christian congregation during his second missionary journey|Ephesus%0A52-54 AD: Ephesus, Asia Minor%0A2025 AD: Selçuk, Turkey%0A%0APaul ministered in Ephesus for approximately three years during his third missionary journey|Rome%0A62 AD: Rome, Capitol of the Roman Empire%0A2025 AD: Rome, Italy%0A%0APaul was held under house arrest in Rome from approximately AD 60 to 62';
+  const defaultChronoPoints='Antioch,Turkey|Philippi,Greece|Ephesus,Turkey|Rome,Italy';
+  const defaultChronoLabels='Antioch%0A47-48 AD: Antioch, Syria%0A2025 AD: Antakya, Turkey%0A%0AAntioch served as the primary mission base for Paul\'s ministry to the Gentiles and was where believers were first called Christians|Philippi%0A49-50 AD: Philippi, Macedonia%0A2025 AD: Filippoi, Greece%0A%0APhilippi was the first European city where Paul established a Christian congregation during his second missionary journey|Ephesus%0A52-54 AD: Ephesus, Asia Minor%0A2025 AD: Selçuk, Turkey%0A%0APaul ministered in Ephesus for approximately three years during his third missionary journey|Rome%0A62 AD: Rome, Capitol of the Roman Empire%0A2025 AD: Rome, Italy%0A%0APaul was held under house arrest in Rome from approximately AD 60 to 62';
   
-  const points=(qs('points')||defaultPoints).split('|').filter(Boolean);
-  const labels=(qs('labels')||defaultLabels).split('|');
-  const toOpen=qs('open')||'all';
+  // Chronological locations (blue markers, connected with paths)
+  const chronoPoints=(qs('chrono')||qs('points')||defaultChronoPoints).split('|').filter(Boolean);
+  const chronoLabels=(qs('chronoLabels')||qs('labels')||defaultChronoLabels).split('|');
+  
+  // Reference locations (red markers, no paths)
+  const refPoints=(qs('reference')||'').split('|').filter(Boolean);
+  const refLabels=(qs('referenceLabels')||'').split('|');
 
-  const markers=[];
-  const coords=[];
-  for(let i=0;i<points.length;i++){
-    const q=points[i].trim();
+  const allMarkers=[];
+  const chronoCoords=[];
+  
+  // Process chronological locations (blue markers)
+  for(let i=0;i<chronoPoints.length;i++){
+    const q=chronoPoints[i].trim();
     if(!q)continue;
     let coord=null;
     const m=q.match(/^(.*)@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)$/);
     if(m){coord={lat:parseFloat(m[2]),lon:parseFloat(m[3])};}
     else{coord=await geocode(q);}
     if(!coord)continue;
-    coords.push({lat:coord.lat,lon:coord.lon});
-    const labelEncoded=labels[i]||q;
+    chronoCoords.push({lat:coord.lat,lon:coord.lon});
+    const labelEncoded=chronoLabels[i]||q;
     const label=labelEncoded.replace(/%0A/gi,'\n');
     const lines=label.split('\n');
     const locationName=lines[0]||q;
     const html=lines.map(l=>'<span class="popup-line">'+l+'</span>').join('');
-    const mk=L.marker([coord.lat,coord.lon])
+    const mk=L.marker([coord.lat,coord.lon],{icon:blueIcon})
       .addTo(map)
       .bindPopup(html,{autoClose:true,closeOnClick:false})
       .bindTooltip(locationName,{permanent:true,direction:'top',className:'marker-label'});
-    markers.push(mk);
+    allMarkers.push(mk);
   }
   
-  // Draw walking paths between consecutive locations
+  // Process reference locations (red markers)
+  for(let i=0;i<refPoints.length;i++){
+    const q=refPoints[i].trim();
+    if(!q)continue;
+    let coord=null;
+    const m=q.match(/^(.*)@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)$/);
+    if(m){coord={lat:parseFloat(m[2]),lon:parseFloat(m[3])};}
+    else{coord=await geocode(q);}
+    if(!coord)continue;
+    const labelEncoded=refLabels[i]||q;
+    const label=labelEncoded.replace(/%0A/gi,'\n');
+    const lines=label.split('\n');
+    const locationName=lines[0]||q;
+    const html=lines.map(l=>'<span class="popup-line">'+l+'</span>').join('');
+    const mk=L.marker([coord.lat,coord.lon],{icon:redIcon})
+      .addTo(map)
+      .bindPopup(html,{autoClose:true,closeOnClick:false})
+      .bindTooltip(locationName,{permanent:true,direction:'top',className:'marker-label-reference'});
+    allMarkers.push(mk);
+  }
+  
+  // Draw walking paths between consecutive chronological locations only
   let totalDistance=0;
-  for(let i=0;i<coords.length-1;i++){
-    const route=await getWalkingRoute(coords[i],coords[i+1]);
+  for(let i=0;i<chronoCoords.length-1;i++){
+    const route=await getWalkingRoute(chronoCoords[i],chronoCoords[i+1]);
     if(route&&route.geometry){
       const latlngs=route.geometry.coordinates.map(c=>[c[1],c[0]]);
       L.polyline(latlngs,{color:'#0369a1',weight:3,opacity:0.7}).addTo(walkingPaths);
@@ -129,8 +162,8 @@ async function getWalkingRoute(start,end){
     }
   }
   
-  if(markers.length){
-    const g=new L.featureGroup(markers);
+  if(allMarkers.length){
+    const g=new L.featureGroup(allMarkers);
     map.fitBounds(g.getBounds().pad(0.18));
     
     // Create travel time display
