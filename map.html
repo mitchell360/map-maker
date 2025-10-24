@@ -17,6 +17,7 @@
     .popup-line:last-child{margin-bottom:0}
     .marker-label{background:#0369a1;color:#ffffff;border:none;box-shadow:0 2px 8px rgba(0,0,0,.3);font-weight:700;font-size:16px;padding:6px 12px;border-radius:4px}
     .marker-label::before{border-top-color:#0369a1!important}
+    .distance-info{position:absolute;z-index:1000;bottom:12px;left:50%;transform:translateX(-50%);background:#fff;padding:10px 16px;border-radius:6px;font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;box-shadow:0 2px 12px rgba(0,0,0,.2);border:2px solid #0369a1}
     .notice{position:absolute;z-index:1000;top:8px;left:8px;background:#fff;padding:6px 8px;border-radius:4px;font:12px/1.3 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;box-shadow:0 1px 4px rgba(0,0,0,.15)}
     .notice a{color:#0645AD;text-decoration:none}
     .notice code{background:#f5f5f5;padding:1px 3px;border-radius:3px}
@@ -39,6 +40,22 @@ async function geocode(q){
   if(j&&j.length)return{lat:parseFloat(j[0].lat),lon:parseFloat(j[0].lon),display:j[0].display_name};
   return null;
 }
+async function getWalkingRoute(start,end){
+  const coords=`${start.lon},${start.lat};${end.lon},${end.lat}`;
+  const url=`https://routing.openstreetmap.de/routed-foot/route/v1/foot/${coords}?overview=full&geometries=geojson`;
+  try{
+    const r=await fetch(url);
+    const data=await r.json();
+    if(data.code==='Ok'&&data.routes&&data.routes.length>0){
+      return{
+        distance:data.routes[0].distance,
+        duration:data.routes[0].duration,
+        geometry:data.routes[0].geometry
+      };
+    }
+  }catch(e){console.error('Route error:',e);}
+  return null;
+}
 (async function(){
   const map=L.map('map',{zoomControl:true}).setView([20,0],2);
   const positron=L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap © CartoDB'}).addTo(map);
@@ -54,6 +71,7 @@ async function geocode(q){
   const toOpen=qs('open')||'all';
 
   const markers=[];
+  const coords=[];
   for(let i=0;i<points.length;i++){
     const q=points[i].trim();
     if(!q)continue;
@@ -62,6 +80,7 @@ async function geocode(q){
     if(m){coord={lat:parseFloat(m[2]),lon:parseFloat(m[3])};}
     else{coord=await geocode(q);}
     if(!coord)continue;
+    coords.push({lat:coord.lat,lon:coord.lon});
     const labelEncoded=labels[i]||q;
     const label=labelEncoded.replace(/%0A/gi,'\n');
     const lines=label.split('\n');
@@ -73,9 +92,42 @@ async function geocode(q){
       .bindTooltip(locationName,{permanent:true,direction:'top',className:'marker-label'});
     markers.push(mk);
   }
+  
+  // Draw walking paths between consecutive locations
+  let totalDistance=0;
+  for(let i=0;i<coords.length-1;i++){
+    const route=await getWalkingRoute(coords[i],coords[i+1]);
+    if(route&&route.geometry){
+      const latlngs=route.geometry.coordinates.map(c=>[c[1],c[0]]);
+      L.polyline(latlngs,{color:'#0369a1',weight:3,opacity:0.7}).addTo(map);
+      totalDistance+=route.distance;
+    }
+  }
+  
   if(markers.length){
     const g=new L.featureGroup(markers);
     map.fitBounds(g.getBounds().pad(0.18));
+    
+    // Show estimated travel time if routes were drawn
+    if(totalDistance>0){
+      const distKm=totalDistance/1000;
+      // Ancient travel: ~25 km/day on foot, boats ~100 km/day on favorable conditions
+      // Assume mix: 60% walking, 40% by boat for Mediterranean routes
+      const walkingDist=distKm*0.6;
+      const boatDist=distKm*0.4;
+      const walkingDays=walkingDist/25;
+      const boatDays=boatDist/100;
+      const totalDays=Math.ceil(walkingDays+boatDays);
+      const weeks=Math.floor(totalDays/7);
+      const days=totalDays%7;
+      let timeStr='';
+      if(weeks>0)timeStr+=`${weeks} week${weeks>1?'s':''} `;
+      if(days>0||weeks===0)timeStr+=`${days} day${days!==1?'s':''}`;
+      const infoDiv=document.createElement('div');
+      infoDiv.className='distance-info';
+      infoDiv.innerHTML=`<strong>Estimated Travel Time:</strong> ${timeStr.trim()} <span style="font-size:12px;color:#6b7280">(${distKm.toFixed(0)} km via walking & boat)</span>`;
+      document.body.appendChild(infoDiv);
+    }
   }else{map.setView([37.8,20],5);}
 })();
 </script>
