@@ -10,15 +10,14 @@ An interactive map visualization tool built with Leaflet.js that displays histor
 - Python HTTP server for local development
 
 ## Recent Changes
-- 2025-10-24: Custom leader line implementation with latest stable libraries
+- 2025-10-26: Simplified to use default Leaflet tooltip behavior
+  - **Removed custom leader line positioning code** - simplified to use Leaflet's built-in tooltip system
+  - **Clean, minimal labels** positioned directly above markers using default `bindTooltip()`
+  - Blue tooltips for chronological locations, red tooltips for reference locations
+  - Much cleaner and more maintainable code
+- 2025-10-24: Core functionality implementation
   - **Updated to Leaflet 1.9.4** (latest stable version) with integrity hashes for security
-  - **Removed Leaflet DVF** (buggy third-party library causing compatibility issues)
-  - **Implemented custom leader lines** using native Leaflet features:
-    - Permanent L.Tooltip labels positioned intelligently to avoid overlap
-    - L.Polyline leader lines (dashed) connecting markers to labels
-    - Intelligent quadrant assignment algorithm prevents label collisions
-    - Blue labels/lines for chronological locations, red for reference locations
-  - **Zero technical debt**: Only uses stable, well-maintained Leaflet core features
+  - **Removed buggy third-party libraries** - uses only stable Leaflet core features
   - Created two-group location system: chronological (blue markers, connected) and reference (red markers, standalone)
   - Integrated DARE (Digital Atlas of the Roman Empire) as default ancient world map
   - Implemented ancient travel time estimation (60% walking at 25km/day, 40% boat at 100km/day)

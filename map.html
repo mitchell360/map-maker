@@ -16,23 +16,33 @@
     .popup-line:nth-child(2),.popup-line:nth-child(3){color:#6b7280;font-size:20px;margin-bottom:8px}
     .popup-line:nth-child(n+4){color:#1f2937;font-size:22px;margin-top:20px;margin-bottom:10px}
     .popup-line:last-child{margin-bottom:0}
-    .marker-label{background:#0369a1;color:#ffffff;border:none;box-shadow:0 2px 8px rgba(0,0,0,.3);font-weight:700;font-size:16px;padding:6px 12px;border-radius:4px}
-    .marker-label::before{border-top-color:#0369a1!important}
-    .marker-label-reference{background:#dc2626;color:#ffffff;border:none;box-shadow:0 2px 8px rgba(0,0,0,.3);font-weight:700;font-size:16px;padding:6px 12px;border-radius:4px}
-    .marker-label-reference::before{border-top-color:#dc2626!important}
     .distance-info{position:absolute;z-index:1000;bottom:12px;left:50%;transform:translateX(-50%);background:#fff;padding:10px 16px;border-radius:6px;font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;box-shadow:0 2px 12px rgba(0,0,0,.2);border:2px solid #0369a1}
-    .label-tooltip{
-      background:rgba(255,255,255,0.95)!important;
-      border:2px solid!important;
-      border-radius:6px!important;
-      padding:6px 12px!important;
-      font:bold 14px/1.4 "Segoe UI",Roboto,Helvetica,Arial,sans-serif!important;
-      box-shadow:0 4px 12px rgba(0,0,0,0.25)!important;
-      white-space:nowrap!important;
+    .leaflet-tooltip.marker-label{
+      background:#0369a1!important;
+      color:#ffffff!important;
+      border:none!important;
+      box-shadow:0 2px 8px rgba(0,0,0,.3)!important;
+      font-weight:700!important;
+      font-size:14px!important;
+      padding:4px 8px!important;
+      border-radius:4px!important;
     }
-    .label-tooltip-blue{border-color:#0369a1!important;color:#0369a1!important}
-    .label-tooltip-red{border-color:#dc2626!important;color:#dc2626!important}
-    .leaflet-tooltip.label-tooltip:before{display:none!important}
+    .leaflet-tooltip.marker-label::before{
+      border-top-color:#0369a1!important;
+    }
+    .leaflet-tooltip.marker-label-reference{
+      background:#dc2626!important;
+      color:#ffffff!important;
+      border:none!important;
+      box-shadow:0 2px 8px rgba(0,0,0,.3)!important;
+      font-weight:700!important;
+      font-size:14px!important;
+      padding:4px 8px!important;
+      border-radius:4px!important;
+    }
+    .leaflet-tooltip.marker-label-reference::before{
+      border-top-color:#dc2626!important;
+    }
   </style>
 </head>
 <body>
@@ -73,51 +83,8 @@ function getDistance(lat1,lon1,lat2,lon2){
   const c=2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
   return R*c;
 }
-function getLeaderLineOffset(locations,index){
-  const loc=locations[index];
-  const proximityThreshold=200;
-  const nearby=[];
-  for(let i=0;i<locations.length;i++){
-    if(i===index)continue;
-    const dist=getDistance(loc.lat,loc.lon,locations[i].lat,locations[i].lon);
-    if(dist<proximityThreshold){
-      nearby.push({index:i,dist:dist});
-    }
-  }
-  const offsets=[
-    {lat:0.8,lon:1.2},
-    {lat:-0.8,lon:1.2},
-    {lat:-0.8,lon:-1.2},
-    {lat:0.8,lon:-1.2}
-  ];
-  if(nearby.length===0)return offsets[0];
-  nearby.sort((a,b)=>a.dist-b.dist);
-  const angles=nearby.map(n=>{
-    const dx=locations[n.index].lon-loc.lon;
-    const dy=locations[n.index].lat-loc.lat;
-    return Math.atan2(dy,dx)*180/Math.PI;
-  });
-  const dirAngles=[45,135,-135,-45];
-  let bestIdx=0;
-  let maxMinDist=0;
-  for(let d=0;d<4;d++){
-    let minDist=360;
-    for(let a of angles){
-      let diff=Math.abs(a-dirAngles[d]);
-      if(diff>180)diff=360-diff;
-      minDist=Math.min(minDist,diff);
-    }
-    if(minDist>maxMinDist){
-      maxMinDist=minDist;
-      bestIdx=d;
-    }
-  }
-  return offsets[bestIdx];
-}
 (async function(){
-  console.log('Script started');
   const map=L.map('map',{zoomControl:true}).setView([20,0],2);
-  console.log('Map initialized');
   const dare=L.tileLayer('https://dh.gu.se/tiles/imperium/{z}/{x}/{y}.png',{minZoom:4,maxZoom:11,attribution:'© <a href="https://dh.gu.se/dare/">Digital Atlas of the Roman Empire</a>'}).addTo(map);
   const positron=L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap © CartoDB'});
   const osm=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'});
@@ -175,9 +142,8 @@ function getLeaderLineOffset(locations,index){
   const allMarkers=[];
   const chronoCoords=[];
   const chronoNames=[];
-  const chronoData=[];
   
-  // First pass: collect all chronological location data
+  // Process chronological locations (blue markers)
   for(let i=0;i<chronoPoints.length;i++){
     const q=chronoPoints[i].trim();
     if(!q)continue;
@@ -192,42 +158,15 @@ function getLeaderLineOffset(locations,index){
     const lines=label.split('\n');
     const locationName=lines[0]||q;
     chronoNames.push(locationName);
-    chronoData.push({lat:coord.lat,lon:coord.lon,name:locationName,label:label,lines:lines});
-  }
-  
-  // Second pass: create markers with custom leader lines
-  console.log('Creating',chronoData.length,'chronological markers with leader lines');
-  for(let i=0;i<chronoData.length;i++){
-    const d=chronoData[i];
-    console.log(`Marker ${i}: ${d.name} at [${d.lat}, ${d.lon}]`);
-    const offset=getLeaderLineOffset(chronoData,i);
-    const html=d.lines.map(l=>'<span class="popup-line">'+l+'</span>').join('');
-    const mk=L.marker([d.lat,d.lon],{icon:blueIcon})
+    const html=lines.map(l=>'<span class="popup-line">'+l+'</span>').join('');
+    const mk=L.marker([coord.lat,coord.lon],{icon:blueIcon})
       .addTo(map)
-      .bindPopup(html,{autoClose:true,closeOnClick:false});
+      .bindPopup(html,{autoClose:true,closeOnClick:false})
+      .bindTooltip(locationName,{permanent:true,direction:'top',className:'marker-label'});
     allMarkers.push(mk);
-    const labelPos=[d.lat+offset.lat,d.lon+offset.lon];
-    console.log(`Label ${i} at [${labelPos[0]}, ${labelPos[1]}]`);
-    L.polyline([[d.lat,d.lon],labelPos],{
-      color:'#0369a1',
-      weight:2,
-      opacity:0.7,
-      dashArray:'4,6'
-    }).addTo(map);
-    L.tooltip({
-      permanent:true,
-      direction:'center',
-      className:'label-tooltip label-tooltip-blue',
-      offset:[0,0]
-    })
-    .setLatLng(labelPos)
-    .setContent(d.name)
-    .addTo(map);
   }
-  console.log(`Created ${allMarkers.length} markers total`);
   
   // Process reference locations (red markers)
-  const refData=[];
   for(let i=0;i<refPoints.length;i++){
     const q=refPoints[i].trim();
     if(!q)continue;
@@ -240,37 +179,12 @@ function getLeaderLineOffset(locations,index){
     const label=labelEncoded.replace(/%0A/gi,'\n');
     const lines=label.split('\n');
     const locationName=lines[0]||q;
-    refData.push({lat:coord.lat,lon:coord.lon,name:locationName,label:label,lines:lines});
-  }
-  
-  // Combine all locations for direction calculation
-  const allLocs=[...chronoData,...refData];
-  
-  // Create reference markers with custom leader lines
-  for(let i=0;i<refData.length;i++){
-    const d=refData[i];
-    const offset=getLeaderLineOffset(allLocs,chronoData.length+i);
-    const html=d.lines.map(l=>'<span class="popup-line">'+l+'</span>').join('');
-    const mk=L.marker([d.lat,d.lon],{icon:redIcon})
+    const html=lines.map(l=>'<span class="popup-line">'+l+'</span>').join('');
+    const mk=L.marker([coord.lat,coord.lon],{icon:redIcon})
       .addTo(map)
-      .bindPopup(html,{autoClose:true,closeOnClick:false});
+      .bindPopup(html,{autoClose:true,closeOnClick:false})
+      .bindTooltip(locationName,{permanent:true,direction:'top',className:'marker-label-reference'});
     allMarkers.push(mk);
-    const labelPos=[d.lat+offset.lat,d.lon+offset.lon];
-    L.polyline([[d.lat,d.lon],labelPos],{
-      color:'#dc2626',
-      weight:2,
-      opacity:0.7,
-      dashArray:'4,6'
-    }).addTo(map);
-    L.tooltip({
-      permanent:true,
-      direction:'center',
-      className:'label-tooltip label-tooltip-red',
-      offset:[0,0]
-    })
-    .setLatLng(labelPos)
-    .setContent(d.name)
-    .addTo(map);
   }
   
   // Draw walking paths between consecutive chronological locations only
@@ -288,12 +202,9 @@ function getLeaderLineOffset(locations,index){
     }
   }
   
-  console.log(`allMarkers.length = ${allMarkers.length}`);
   if(allMarkers.length){
     const g=new L.featureGroup(allMarkers);
-    const bounds=g.getBounds();
-    console.log('Fitting bounds:',bounds);
-    map.fitBounds(bounds.pad(0.18));
+    map.fitBounds(g.getBounds().pad(0.18));
     
     // Create travel time display
     if(totalDistance>0){
