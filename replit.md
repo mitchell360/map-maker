@@ -9,7 +9,20 @@ An interactive map visualization tool built with Leaflet.js that displays histor
 - Uses CDN-hosted libraries (Leaflet.js)
 - Python HTTP server for local development
 
+## User Preferences & Development Practices
+- **CRITICAL:** Whenever adding or updating features, ALWAYS update the LLM instructions in both:
+  - `llm-instructions.html` - Human-readable formatted instructions
+  - `llm-instructions.json` - Machine-readable structured data
+- These static files work with GitHub Pages and must always reflect the latest functionality
+- Keep both HTML and JSON formats synchronized with current URL parameters and features
+
 ## Recent Changes
+- 2025-10-26: Added static LLM instructions files
+  - **Created `llm-instructions.html`** - beautifully formatted HTML page with comprehensive URL construction instructions for LLMs
+  - **Created `llm-instructions.json`** - structured JSON version for programmatic access
+  - Both files are static and work with GitHub Pages hosting
+  - Instructions include parameter definitions, examples, encoding rules, construction steps, and tips
+  - Server prints availability on startup for local development
 - 2025-10-26: Simplified to use default Leaflet tooltip behavior
   - **Removed custom leader line positioning code** - simplified to use Leaflet's built-in tooltip system
   - **Clean, minimal labels** positioned directly above markers using default `bindTooltip()`

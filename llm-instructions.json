@@ -1,0 +1,81 @@
+{
+  "service": "Historical Map Visualization",
+  "base_url_pattern": "https://[domain]/?[parameters]",
+  "parameters": {
+    "chrono": {
+      "description": "Pipe-separated chronological locations (blue markers, connected)",
+      "format": "Location1|Location2|Location3",
+      "example": "Antioch,Turkey|Philippi,Greece|Rome,Italy"
+    },
+    "chronoLabels": {
+      "description": "Pipe-separated labels for chronological locations (use %0A for newlines)",
+      "format": "Label1%0ADetails|Label2%0ADetails",
+      "example": "Antioch%0A47-48 AD|Philippi%0A49-50 AD"
+    },
+    "reference": {
+      "description": "Pipe-separated reference locations (red markers, standalone)",
+      "format": "Location1|Location2",
+      "example": "Jerusalem,Israel|Athens,Greece"
+    },
+    "referenceLabels": {
+      "description": "Pipe-separated labels for reference locations (use %0A for newlines)",
+      "format": "Label1%0ADetails|Label2%0ADetails",
+      "example": "Jerusalem%0AHoly City|Athens%0APhilosophy Center"
+    }
+  },
+  "encoding_rules": [
+    "Use pipe | to separate multiple items",
+    "Use %0A for newlines within labels",
+    "Use %20 or + for spaces",
+    "Separate parameters with &"
+  ],
+  "construction_steps": {
+    "step_1": "Identify location types (chronological vs reference)",
+    "step_2": "Format locations as 'City, Country' for best geocoding results",
+    "step_3": "Create labels with %0A for newlines (first line is location name)",
+    "step_4": "Construct URL with proper encoding"
+  },
+  "tips": [
+    "Always specify country/region with city names",
+    "Match label count to location count",
+    "Use %0A for line breaks in labels",
+    "Chronological order matters - locations connected in sequence",
+    "Reference locations are independent",
+    "Keep URLs under 8000 characters"
+  ],
+  "example_urls": [
+    {
+      "url": "?chrono=Jerusalem,Israel|Damascus,Syria|Antioch,Turkey",
+      "description": "Simple journey with three stops"
+    },
+    {
+      "url": "?chrono=Rome,Italy|Corinth,Greece&chronoLabels=Rome%0ACapital of Empire%0A1st Century AD|Corinth%0AMajor Port City%0A50 AD",
+      "description": "Journey with detailed labels"
+    },
+    {
+      "url": "?chrono=Antioch,Turkey|Philippi,Greece|Rome,Italy&chronoLabels=Antioch%0AStart|Philippi%0AFirst European Church|Rome%0AEnd&reference=Jerusalem,Israel&referenceLabels=Jerusalem%0ABirthplace of Christianity",
+      "description": "Journey with labels and reference location"
+    }
+  ],
+  "map_features": {
+    "base_maps": [
+      "Ancient World (DARE)",
+      "Modern Clean",
+      "Modern Detailed"
+    ],
+    "overlays": [
+      "Country Borders",
+      "Walking Paths",
+      "Travel Time"
+    ],
+    "interactions": [
+      "Click markers for detailed popups",
+      "Toggle layers in top-right control"
+    ]
+  },
+  "error_handling": [
+    "Invalid locations will be skipped (geocoding failure)",
+    "Missing labels default to location names",
+    "Empty parameters are ignored"
+  ]
+}

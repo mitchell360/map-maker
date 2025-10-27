@@ -34,4 +34,5 @@ Handler = MyHTTPRequestHandler
 with ReusableTCPServer(("0.0.0.0", PORT), Handler) as httpd:
     print(f"Server running at http://0.0.0.0:{PORT}/")
     print(f"Serving map.html")
+    print(f"LLM Instructions available at: /llm-instructions.html or /llm-instructions.json")
     httpd.serve_forever()
