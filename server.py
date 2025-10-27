@@ -17,10 +17,7 @@ class MyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         super().end_headers()
     
     def do_GET(self):
-        # Redirect root to map.html, preserving query parameters
-        if self.path.startswith('/?') or self.path == '/':
-            query = self.path[1:] if self.path.startswith('/?') else ''
-            self.path = '/map.html' + query
+        # index.html is now the default page
         return super().do_GET()
 
 class ReusableTCPServer(socketserver.TCPServer):
@@ -33,6 +30,6 @@ Handler = MyHTTPRequestHandler
 
 with ReusableTCPServer(("0.0.0.0", PORT), Handler) as httpd:
     print(f"Server running at http://0.0.0.0:{PORT}/")
-    print(f"Serving map.html")
+    print(f"Serving index.html (historical map)")
     print(f"LLM Instructions available at: /llm-instructions.html or /llm-instructions.json")
     httpd.serve_forever()
