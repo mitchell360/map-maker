@@ -4,10 +4,11 @@
 An interactive map visualization tool built with Leaflet.js that displays historical locations with labeled markers, optional walking paths between them, estimated ancient travel times, and toggleable country borders. Fully customizable via URL query parameters.
 
 ## Project Type
-- Static HTML application
+- **Pure static site** - No custom server code
+- Static HTML files ready for GitHub Pages deployment
 - No build process required
 - Uses CDN-hosted libraries (Leaflet.js)
-- Python HTTP server for local development
+- Simple Python static file server for Replit development/testing
 
 ## User Preferences & Development Practices
 - **CRITICAL:** Whenever adding or updating features, ALWAYS update the LLM instructions in both:
@@ -56,10 +57,13 @@ An interactive map visualization tool built with Leaflet.js that displays histor
 - **URL-Driven**: All features controllable via query parameters
 
 ## Architecture
-- Single HTML file (`map.html`) containing:
+- Single HTML file (`index.html`) containing:
   - CSS styling for map, popups, markers, and labels
   - JavaScript for geocoding, routing, and map rendering
   - Leaflet.js integration via CDN
+- Static instruction files for LLMs:
+  - `llm-instructions.html` - Human-readable formatted guide
+  - `llm-instructions.json` - Machine-readable structured data
 - Map Tile Sources:
   - DARE (Digital Atlas of the Roman Empire) - dh.gu.se
   - CartoDB Positron (modern clean)
@@ -104,4 +108,23 @@ An interactive map visualization tool built with Leaflet.js that displays histor
 - Overlays: Country Borders, Walking Paths, Travel Time (all hidden by default)
 
 ## Running the Project
-The project runs a simple Python HTTP server to serve the static HTML file on port 5000.
+**For Replit Development/Testing:**
+- Uses Python's built-in static file server: `python3 -m http.server 5000`
+- Serves files at http://localhost:5000/
+- No custom server logic - pure static file serving
+
+**For GitHub Pages Deployment:**
+- Files are served as-is from the repository
+- `index.html` is automatically served at the root path
+- URL parameters work directly: `https://mitchell360.com/map-maker/?chrono=Location1|Location2`
+
+## File Structure
+```
+.
+├── index.html              # Main map application (static)
+├── llm-instructions.html   # Human-readable LLM instructions (static)
+├── llm-instructions.json   # Machine-readable LLM instructions (static)
+└── replit.md              # Project documentation
+```
+
+All files are static and work identically in Replit development and GitHub Pages deployment.
