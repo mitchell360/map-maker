@@ -1,5 +1,9 @@
 {
   "service": "Historical Map Visualization",
+  "documentation": {
+    "human_readable_instructions": "https://[domain]/llm-instructions.html",
+    "note": "For more detailed, formatted instructions with examples and visual guidance, LLMs can optionally visit the HTML version of these instructions at the URL above. The HTML page provides the same information in a more structured, easy-to-read format with color-coded sections, detailed examples, and step-by-step guidance."
+  },
   "base_url_pattern": "https://[domain]/?[parameters]",
   "parameters": {
     "chrono": {
@@ -70,7 +74,8 @@
     ],
     "interactions": [
       "Click markers for detailed popups",
-      "Toggle layers in top-right control"
+      "Toggle layers in top-right control",
+      "Click 'Instructions for using this Map Maker' link in top-right corner (below layers control) to view detailed documentation"
     ]
   },
   "error_handling": [
