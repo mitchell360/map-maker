@@ -14,9 +14,10 @@
       "example": "Antioch,Turkey|Philippi,Greece|Rome,Italy"
     },
     "chronoLabels": {
-      "description": "Pipe-separated labels for chronological locations (use %0A for newlines)",
-      "format": "Label1%0ADetails|Label2%0ADetails",
-      "example": "Antioch%0A47-48 AD|Philippi%0A49-50 AD"
+      "description": "Pipe-separated labels for chronological locations. Recommended format: Line1=LocationName, Line2=HistoricalDate: AncientLocation, Line3=ModernDate: CurrentLocation, Line4=blank, Line5+=Description",
+      "format": "LocationName%0AHistoricalInfo%0AModernInfo%0A%0ADescription|NextLocation%0A...",
+      "example": "Antioch%0A47-48 AD: Antioch, Syria%0A2025 AD: Antakya, Turkey%0A%0AAntioch served as Paul's primary mission base.",
+      "rich_example": "Philippi%0A49-50 AD: Philippi, Macedonia%0A2025 AD: Filippoi, Greece%0A%0APhilippi was the first European city where Paul established a Christian congregation during his second missionary journey."
     },
     "reference": {
       "description": "Pipe-separated reference locations (red markers, standalone)",
@@ -24,9 +25,9 @@
       "example": "Jerusalem,Israel|Athens,Greece"
     },
     "referenceLabels": {
-      "description": "Pipe-separated labels for reference locations (use %0A for newlines)",
-      "format": "Label1%0ADetails|Label2%0ADetails",
-      "example": "Jerusalem%0AHoly City|Athens%0APhilosophy Center"
+      "description": "Pipe-separated labels for reference locations. Same rich format as chronoLabels recommended.",
+      "format": "LocationName%0AHistoricalInfo%0AModernInfo%0A%0ADescription|NextLocation%0A...",
+      "example": "Jerusalem%0A33 AD: Jerusalem, Judea%0A2025 AD: Jerusalem, Israel%0A%0AThe Church's birthplace and site of Pentecost."
     }
   },
   "encoding_rules": [
@@ -38,29 +39,33 @@
   "construction_steps": {
     "step_1": "Identify location types (chronological vs reference)",
     "step_2": "Format locations as 'City, Country' for best geocoding results",
-    "step_3": "Create labels with %0A for newlines (first line is location name)",
-    "step_4": "Construct URL with proper encoding"
+    "step_3": "Create rich labels using 5-line format: LocationName%0AHistoricalDate: AncientLocation%0AModernDate: CurrentLocation%0A%0ADetailed description",
+    "step_4": "Construct URL with proper encoding, using | to separate locations and %20 for spaces"
   },
   "tips": [
-    "Always specify country/region with city names",
-    "Match label count to location count",
-    "Use %0A for line breaks in labels",
-    "Chronological order matters - locations connected in sequence",
-    "Reference locations are independent",
-    "Keep URLs under 8000 characters"
+    "Always specify country/region with city names for accurate geocoding",
+    "Match label count to location count (one label per location)",
+    "Use rich 5-line label format for beautiful popups: Name, Historical context, Modern context, blank line, Description",
+    "Use %0A for line breaks, %0A%0A for blank lines between context and description",
+    "Chronological order matters - locations are connected by walking paths in sequence",
+    "Reference locations are independent and not connected",
+    "First line of each label becomes the marker name displayed on map",
+    "Lines 2-3 appear in gray as historical/modern context in popup",
+    "Line 5+ becomes the main description text in the popup",
+    "Keep URLs under 8000 characters for compatibility"
   ],
   "example_urls": [
     {
       "url": "?chrono=Jerusalem,Israel|Damascus,Syria|Antioch,Turkey",
-      "description": "Simple journey with three stops"
+      "description": "Simple journey with three stops (minimal labels)"
     },
     {
-      "url": "?chrono=Rome,Italy|Corinth,Greece&chronoLabels=Rome%0ACapital of Empire%0A1st Century AD|Corinth%0AMajor Port City%0A50 AD",
-      "description": "Journey with detailed labels"
+      "url": "?chrono=Antioch,Turkey|Philippi,Greece&chronoLabels=Antioch%0A47-48 AD: Antioch, Syria%0A2025 AD: Antakya, Turkey%0A%0AAntioch served as Paul's primary mission base.|Philippi%0A49-50 AD: Philippi, Macedonia%0A2025 AD: Filippoi, Greece%0A%0APhilippi was the first European city where Paul established a Christian congregation.",
+      "description": "Rich journey with full historical context (recommended format)"
     },
     {
-      "url": "?chrono=Antioch,Turkey|Philippi,Greece|Rome,Italy&chronoLabels=Antioch%0AStart|Philippi%0AFirst European Church|Rome%0AEnd&reference=Jerusalem,Israel&referenceLabels=Jerusalem%0ABirthplace of Christianity",
-      "description": "Journey with labels and reference location"
+      "url": "?chrono=Rome,Italy|Corinth,Greece&chronoLabels=Rome%0A60-62 AD: Rome, Roman Empire%0A2025 AD: Rome, Italy%0A%0APaul spent two years under house arrest in Rome.|Corinth%0A50-52 AD: Corinth, Achaia%0A2025 AD: Korinthos, Greece%0A%0APaul spent 18 months in this strategic commercial center.&reference=Jerusalem,Israel&referenceLabels=Jerusalem%0A33 AD: Jerusalem, Judea%0A2025 AD: Jerusalem, Israel%0A%0AThe Church's birthplace and site of Pentecost.",
+      "description": "Complete example with chronological journey and reference location, all with rich labels"
     }
   ],
   "map_features": {

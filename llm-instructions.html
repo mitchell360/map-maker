@@ -157,12 +157,20 @@
     <li>Example: "Rome, Italy" not just "Rome"</li>
   </ul>
 
-  <h3>Step 3: Create Labels (Optional)</h3>
+  <h3>Step 3: Create Rich Labels (Recommended Format)</h3>
   <ul>
-    <li>First line is the location name (displays on map)</li>
-    <li>Additional lines provide historical context</li>
-    <li>Use %0A between lines</li>
+    <li><strong>Line 1:</strong> Location name (displays as large blue title in popup and marker label)</li>
+    <li><strong>Line 2:</strong> Historical date and ancient location (displays in gray, e.g., "47-48 AD: Antioch, Syria")</li>
+    <li><strong>Line 3:</strong> Modern date and current location (displays in gray, e.g., "2025 AD: Antakya, Turkey")</li>
+    <li><strong>Line 4:</strong> Blank line for spacing (use %0A%0A)</li>
+    <li><strong>Line 5+:</strong> Detailed historical description (displays in larger text as main content)</li>
+    <li>Use %0A between each line</li>
   </ul>
+  
+  <div class="tip">
+    <strong>Rich Label Example:</strong><br>
+    <code>Philippi%0A49-50 AD: Philippi, Macedonia%0A2025 AD: Filippoi, Greece%0A%0APhilippi was the first European city where Paul established a Christian congregation during his second missionary journey.</code>
+  </div>
 
   <h3>Step 4: Construct URL</h3>
   <pre><code>?chrono=Location1|Location2|Location3&chronoLabels=Label1%0ADetails|Label2%0ADetails&reference=RefLoc1&referenceLabels=RefLabel1%0ADetails</code></pre>
@@ -172,6 +180,11 @@
   <div class="example">
     <h3>Simple Journey</h3>
     <code>?chrono=Jerusalem,Israel|Damascus,Syria|Antioch,Turkey</code>
+  </div>
+  
+  <div class="example">
+    <h3>Rich Journey with Full Historical Context</h3>
+    <code>?chrono=Antioch,Turkey|Philippi,Greece&chronoLabels=Antioch%0A47-48 AD: Antioch, Syria%0A2025 AD: Antakya, Turkey%0A%0AAntioch served as Paul's primary mission base for ministry to the Gentiles.|Philippi%0A49-50 AD: Philippi, Macedonia%0A2025 AD: Filippoi, Greece%0A%0APhilippi was the first European city where Paul established a Christian congregation.</code>
   </div>
 
   <div class="example">
