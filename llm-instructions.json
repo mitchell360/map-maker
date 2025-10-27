@@ -1,10 +1,12 @@
 {
   "service": "Historical Map Visualization",
+  "service_url": "https://mitchell360.com/map-maker/",
   "documentation": {
-    "human_readable_instructions": "https://[domain]/llm-instructions.html",
-    "note": "For more detailed, formatted instructions with examples and visual guidance, LLMs can optionally visit the HTML version of these instructions at the URL above. The HTML page provides the same information in a more structured, easy-to-read format with color-coded sections, detailed examples, and step-by-step guidance."
+    "human_readable_instructions": "https://mitchell360.com/map-maker/llm-instructions.html",
+    "json_instructions": "https://mitchell360.com/map-maker/llm-instructions.json",
+    "note": "For more detailed, formatted instructions with examples and visual guidance, LLMs can optionally visit the HTML version of these instructions at the human_readable_instructions URL above. The HTML page provides the same information in a more structured, easy-to-read format with color-coded sections, detailed examples, and step-by-step guidance."
   },
-  "base_url_pattern": "https://[domain]/?[parameters]",
+  "base_url_pattern": "https://mitchell360.com/map-maker/?[parameters]",
   "parameters": {
     "chrono": {
       "description": "Pipe-separated chronological locations (blue markers, connected)",
