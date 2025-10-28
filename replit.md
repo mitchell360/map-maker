@@ -18,6 +18,16 @@ An interactive map visualization tool built with Leaflet.js that displays histor
 - Keep both HTML and JSON formats synchronized with current URL parameters and features
 
 ## Recent Changes
+- 2025-10-28: **ADDED MAP TITLE AND LOADING PROGRESS OVERLAY**
+  - **Map Title:** Optional `title` URL parameter displays centered title above map with elegant serif styling
+  - Default title "Paul's Missionary Journeys" shown when no title parameter provided
+  - Title has z-index:3100 to appear above loading overlay (visible during entire session)
+  - **Loading Progress Overlay:** Full-screen loading indicator with spinner and real-time status
+  - Shows "Initializing map...", "Loading locations..." with geocoding progress (e.g., "Geocoding: Antioch,Turkey (1/5)")
+  - Displays route calculation progress (e.g., "Route 2 of 3: Philippi → Ephesus")
+  - Automatically hides when map is fully rendered
+  - **Bug Fixes:** Fixed template literal syntax error in numbered badge HTML, fixed double-decoding issue in title parameter
+  - **Documentation:** Updated both `llm-instructions.html` and `llm-instructions.json` with complete title parameter documentation
 - 2025-10-28: **ADDED AUTOMATIC CACHE-BUSTING** - For Replit development preview only
   - Automatically appends `?_cb=[timestamp]` to URL if not present
   - Bypasses Replit's aggressive preview iframe caching

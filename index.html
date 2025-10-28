@@ -103,9 +103,29 @@
     .arrow-marker div{
       font-family:system-ui,-apple-system,sans-serif;
     }
+    
+    /* Map title */
+    .map-title{position:absolute;top:12px;left:50%;transform:translateX(-50%);z-index:3100;background:rgba(255,255,255,0.95);padding:12px 24px;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.2);font-family:Georgia,Cambria,"Times New Roman",serif;font-size:24px;font-weight:700;color:#0b5394;text-align:center;max-width:calc(100% - 100px);pointer-events:none}
+    @media (max-width: 768px) {
+      .map-title{font-size:18px;padding:8px 16px;top:8px;max-width:calc(100% - 80px)}
+    }
+    
+    /* Loading overlay */
+    .loading-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(255,255,255,0.95);z-index:3000;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+    .loading-spinner{width:48px;height:48px;border:4px solid #e5e7eb;border-top-color:#0369a1;border-radius:50%;animation:spin 0.8s linear infinite;margin-bottom:20px}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .loading-text{font-size:18px;color:#374151;font-weight:500;margin-bottom:8px}
+    .loading-detail{font-size:14px;color:#6b7280}
   </style>
 </head>
 <body>
+<!-- Loading overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-spinner"></div>
+  <div class="loading-text" id="loadingText">Loading map...</div>
+  <div class="loading-detail" id="loadingDetail"></div>
+</div>
+
 <div id="map"></div>
 
 <!-- Mobile drawer -->
@@ -215,13 +235,39 @@ async function getWalkingRoute(start,end){
   return null;
 }
 
+// Loading indicator helpers
+const loadingOverlay=document.getElementById('loadingOverlay');
+const loadingText=document.getElementById('loadingText');
+const loadingDetail=document.getElementById('loadingDetail');
+
+function updateLoading(text,detail=''){
+  loadingText.textContent=text;
+  loadingDetail.textContent=detail;
+}
+
+function hideLoading(){
+  loadingOverlay.style.display='none';
+}
+
 // Initialize map
 (async function(){
+  updateLoading('Initializing map...');
+  
   const map=L.map('map',{zoomControl:true}).setView([20,0],2);
   const dare=L.tileLayer('https://dh.gu.se/tiles/imperium/{z}/{x}/{y}.png',{minZoom:4,maxZoom:11,attribution:'© <a href="https://dh.gu.se/dare/">Digital Atlas of the Roman Empire</a>'}).addTo(map);
   const positron=L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap © CartoDB'});
   const osm=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'});
   const baseLayers={'Ancient World':dare,'Modern (Clean)':positron,'Modern (Detailed)':osm};
+  
+  // Add title if provided, or use default for test data
+  const titleParam=qs('title');
+  const defaultTitle="Paul's Missionary Journeys";
+  const displayTitle=titleParam||defaultTitle;
+  
+  const titleDiv=document.createElement('div');
+  titleDiv.className='map-title';
+  titleDiv.textContent=displayTitle;
+  document.body.appendChild(titleDiv);
   
   // Custom marker icons
   const blueIcon=L.icon({iconUrl:'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',shadowUrl:'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',iconSize:[25,41],iconAnchor:[12,41],popupAnchor:[1,-34],shadowSize:[41,41]});
@@ -317,10 +363,17 @@ async function getWalkingRoute(start,end){
   const chronoCoords=[];
   const chronoNames=[];
   
+  const totalLocations=chronoPoints.length+refPoints.length;
+  let processedCount=0;
+  
   // Process chronological locations (blue markers)
+  updateLoading('Loading locations...',`Processing chronological locations (0/${chronoPoints.length})`);
   for(let i=0;i<chronoPoints.length;i++){
     const q=chronoPoints[i].trim();
     if(!q)continue;
+    
+    updateLoading('Loading locations...',`Geocoding: ${q} (${processedCount+1}/${totalLocations})`);
+    
     let coord=null;
     const m=q.match(/^(.*)@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)$/);
     if(m){coord={lat:parseFloat(m[2]),lon:parseFloat(m[3])};}
@@ -340,12 +393,17 @@ async function getWalkingRoute(start,end){
       .on('click',()=>openDrawer(html));
     
     allMarkers.push(mk);
+    processedCount++;
   }
   
   // Process reference locations (red markers)
+  updateLoading('Loading locations...',`Processing reference locations (${processedCount}/${totalLocations})`);
   for(let i=0;i<refPoints.length;i++){
     const q=refPoints[i].trim();
     if(!q)continue;
+    
+    updateLoading('Loading locations...',`Geocoding: ${q} (${processedCount+1}/${totalLocations})`);
+    
     let coord=null;
     const m=q.match(/^(.*)@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)$/);
     if(m){coord={lat:parseFloat(m[2]),lon:parseFloat(m[3])};}
@@ -363,6 +421,7 @@ async function getWalkingRoute(start,end){
       .on('click',()=>openDrawer(html));
     
     allMarkers.push(mk);
+    processedCount++;
   }
   
   // Purple color palette for different segments (accessible and high contrast)
@@ -388,10 +447,12 @@ async function getWalkingRoute(start,end){
   }
   
   // Draw travel paths between consecutive chronological locations with different colors
+  updateLoading('Calculating travel routes...',`Preparing ${chronoCoords.length-1} route segments`);
   let totalDistance=0;
   const legDistances=[];
   const legColors=[];
   for(let i=0;i<chronoCoords.length-1;i++){
+    updateLoading('Calculating travel routes...',`Route ${i+1} of ${chronoCoords.length-1}: ${chronoNames[i]} → ${chronoNames[i+1]}`);
     const route=await getWalkingRoute(chronoCoords[i],chronoCoords[i+1]);
     const segmentColor=purpleColors[i%purpleColors.length];
     legColors.push(segmentColor);
@@ -417,7 +478,7 @@ async function getWalkingRoute(start,end){
         const distAlongPath=(pathLength/(numArrows+1))*a;
         const point=getPointAtDistance(latlngs,distAlongPath);
         if(point){
-          const arrowHtml=`<div style="width:18px;height:18px;background:#ffffff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:10px;color:#000;box-shadow:0 2px 6px rgba(0,0,0,0.3),0 0 0 2px ${segmentColor}">${segmentNumber}</div>`;
+          const arrowHtml='<div style="width:18px;height:18px;background:#ffffff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:10px;color:#000;box-shadow:0 2px 6px rgba(0,0,0,0.3),0 0 0 2px '+segmentColor+'">'+segmentNumber+'</div>';
           const arrow=L.marker([point.lat,point.lng],{
             icon:L.divIcon({
               className:'arrow-marker',
@@ -493,6 +554,10 @@ async function getWalkingRoute(start,end){
       });
     }
   }else{map.setView([37.8,20],5);}
+  
+  // Rendering complete - hide loading overlay
+  updateLoading('Map ready!','All locations loaded successfully');
+  setTimeout(hideLoading,500);
 })();
 </script>
 </body>
