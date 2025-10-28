@@ -325,39 +325,19 @@ function hideLoading(){
     return results;
   }
   
-  // Check for new format first, fall back to old format with warning
-  let chronoPoints,chronoLabels,refPoints,refLabels;
-  const newChronoParam=qs('chronoLocationsAndLabels');
-  const newRefParam=qs('referenceLocationsAndLabels');
-  const oldChronoParam=qs('chrono');
-  const oldChronoLabelsParam=qs('chronoLabels');
-  const oldRefParam=qs('reference');
-  const oldRefLabelsParam=qs('referenceLabels');
+  // Parse URL parameters (chronoLocationsAndLabels and referenceLocationsAndLabels)
+  const chronoParam=qs('chronoLocationsAndLabels');
+  const refParam=qs('referenceLocationsAndLabels');
   
-  if(newChronoParam||newRefParam){
-    // New format
-    const chronoData=parseLocationsAndLabels(newChronoParam||defaultChronoData);
-    chronoPoints=chronoData.locations;
-    chronoLabels=chronoData.labels;
-    const refData=parseLocationsAndLabels(newRefParam||defaultRefData);
-    refPoints=refData.locations;
-    refLabels=refData.labels;
-  }else if(oldChronoParam||oldRefParam){
-    // Old format - maintain backward compatibility but warn
-    console.warn('⚠️ DEPRECATED: Using old parameter format (chrono/chronoLabels). Please migrate to new format (chronoLocationsAndLabels). See https://mitchell360.com/map-maker/llm.md');
-    chronoPoints=(oldChronoParam||'').split('|').filter(Boolean);
-    chronoLabels=(oldChronoLabelsParam||'').split('|');
-    refPoints=(oldRefParam||'').split('|').filter(Boolean);
-    refLabels=(oldRefLabelsParam||'').split('|');
-  }else{
-    // No params - use defaults in new format
-    const chronoData=parseLocationsAndLabels(defaultChronoData);
-    chronoPoints=chronoData.locations;
-    chronoLabels=chronoData.labels;
-    const refData=parseLocationsAndLabels(defaultRefData);
-    refPoints=refData.locations;
-    refLabels=refData.labels;
-  }
+  // Parse chronological locations (blue markers, connected journey)
+  const chronoData=parseLocationsAndLabels(chronoParam||defaultChronoData);
+  const chronoPoints=chronoData.locations;
+  const chronoLabels=chronoData.labels;
+  
+  // Parse reference locations (red markers, standalone)
+  const refData=parseLocationsAndLabels(refParam||defaultRefData);
+  const refPoints=refData.locations;
+  const refLabels=refData.labels;
 
   const allMarkers=[];
   const chronoCoords=[];
