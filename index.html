@@ -249,18 +249,62 @@ async function getWalkingRoute(start,end){
   };
   L.control.layers(baseLayers,overlays,{collapsed:true}).addTo(map);
 
-  const defaultChronoPoints='Antioch,Turkey|Philippi,Greece|Ephesus,Turkey|Rome,Italy';
-  const defaultChronoLabels='Antioch%0A47-48 AD: Antioch, Syria%0A2025 AD: Antakya, Turkey%0A%0AAntioch served as the primary mission base for Paul\'s ministry to the Gentiles and was where believers were first called Christians|Philippi%0A49-50 AD: Philippi, Macedonia%0A2025 AD: Filippoi, Greece%0A%0APhilippi was the first European city where Paul established a Christian congregation during his second missionary journey|Ephesus%0A52-54 AD: Ephesus, Asia Minor%0A2025 AD: Selçuk, Turkey%0A%0APaul ministered in Ephesus for approximately three years during his third missionary journey|Rome%0A62 AD: Rome, Capitol of the Roman Empire%0A2025 AD: Rome, Italy%0A%0APaul was held under house arrest in Rome from approximately AD 60 to 62';
-  const defaultRefPoints='Jerusalem,Israel';
-  const defaultRefLabels='Jerusalem%0A33 AD: Jerusalem, Judea%0A2025 AD: Jerusalem, Israel%0A%0AThe Church\'s birthplace and site of Pentecost';
+  // Default data using new combined format
+  const defaultChronoData='Antioch,Turkey~Antioch%0A47-48 AD: Antioch, Syria%0A2025 AD: Antakya, Turkey%0A%0AAntioch served as the primary mission base for Paul\'s ministry to the Gentiles and was where believers were first called Christians|Philippi,Greece~Philippi%0A49-50 AD: Philippi, Macedonia%0A2025 AD: Filippoi, Greece%0A%0APhilippi was the first European city where Paul established a Christian congregation during his second missionary journey|Ephesus,Turkey~Ephesus%0A52-54 AD: Ephesus, Asia Minor%0A2025 AD: Selçuk, Turkey%0A%0APaul ministered in Ephesus for approximately three years during his third missionary journey|Rome,Italy~Rome%0A62 AD: Rome, Capitol of the Roman Empire%0A2025 AD: Rome, Italy%0A%0APaul was held under house arrest in Rome from approximately AD 60 to 62';
+  const defaultRefData='Jerusalem,Israel~Jerusalem%0A33 AD: Jerusalem, Judea%0A2025 AD: Jerusalem, Israel%0A%0AThe Church\'s birthplace and site of Pentecost';
   
-  // Chronological locations (blue markers, connected with paths)
-  const chronoPoints=(qs('chrono')||defaultChronoPoints).split('|').filter(Boolean);
-  const chronoLabels=(qs('chronoLabels')||defaultChronoLabels).split('|');
+  // Parse function for new combined format (Location~Label pairs)
+  function parseLocationsAndLabels(paramStr){
+    const results={locations:[],labels:[]};
+    if(!paramStr)return results;
+    const entries=paramStr.split('|').filter(Boolean);
+    for(const entry of entries){
+      const parts=entry.split('~');
+      const location=parts[0]?.trim()||'';
+      let label=parts[1]?.trim()||'';
+      // If label is missing, empty, or explicitly "TBD", use the TBD placeholder
+      if(!label||label===''||label==='TBD'){
+        label=`TBD%0ATBD: Location information not provided%0A2025 AD: Unknown%0A%0APlease provide complete location details.`;
+      }
+      results.locations.push(location);
+      results.labels.push(label);
+    }
+    return results;
+  }
   
-  // Reference locations (red markers, no paths)
-  const refPoints=(qs('reference')||defaultRefPoints).split('|').filter(Boolean);
-  const refLabels=(qs('referenceLabels')||defaultRefLabels).split('|');
+  // Check for new format first, fall back to old format with warning
+  let chronoPoints,chronoLabels,refPoints,refLabels;
+  const newChronoParam=qs('chronoLocationsAndLabels');
+  const newRefParam=qs('referenceLocationsAndLabels');
+  const oldChronoParam=qs('chrono');
+  const oldChronoLabelsParam=qs('chronoLabels');
+  const oldRefParam=qs('reference');
+  const oldRefLabelsParam=qs('referenceLabels');
+  
+  if(newChronoParam||newRefParam){
+    // New format
+    const chronoData=parseLocationsAndLabels(newChronoParam||defaultChronoData);
+    chronoPoints=chronoData.locations;
+    chronoLabels=chronoData.labels;
+    const refData=parseLocationsAndLabels(newRefParam||defaultRefData);
+    refPoints=refData.locations;
+    refLabels=refData.labels;
+  }else if(oldChronoParam||oldRefParam){
+    // Old format - maintain backward compatibility but warn
+    console.warn('⚠️ DEPRECATED: Using old parameter format (chrono/chronoLabels). Please migrate to new format (chronoLocationsAndLabels). See https://mitchell360.com/map-maker/llm-instructions.html');
+    chronoPoints=(oldChronoParam||'').split('|').filter(Boolean);
+    chronoLabels=(oldChronoLabelsParam||'').split('|');
+    refPoints=(oldRefParam||'').split('|').filter(Boolean);
+    refLabels=(oldRefLabelsParam||'').split('|');
+  }else{
+    // No params - use defaults in new format
+    const chronoData=parseLocationsAndLabels(defaultChronoData);
+    chronoPoints=chronoData.locations;
+    chronoLabels=chronoData.labels;
+    const refData=parseLocationsAndLabels(defaultRefData);
+    refPoints=refData.locations;
+    refLabels=refData.labels;
+  }
 
   const allMarkers=[];
   const chronoCoords=[];

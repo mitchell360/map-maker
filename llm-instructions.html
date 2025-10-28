@@ -88,6 +88,44 @@
       margin: 15px 0;
       border-left: 4px solid #22c55e;
     }
+    .critical {
+      background: #fef2f2;
+      padding: 20px;
+      border-radius: 6px;
+      margin: 20px 0;
+      border-left: 4px solid #dc2626;
+      font-weight: 600;
+    }
+    .error-example {
+      background: #fef2f2;
+      padding: 15px;
+      border-radius: 6px;
+      margin: 15px 0;
+      border-left: 4px solid #dc2626;
+    }
+    .correct-example {
+      background: #f0fdf4;
+      padding: 15px;
+      border-radius: 6px;
+      margin: 15px 0;
+      border-left: 4px solid #22c55e;
+    }
+    .checklist {
+      background: #fefce8;
+      padding: 15px;
+      border-radius: 6px;
+      margin: 15px 0;
+      border-left: 4px solid #eab308;
+    }
+    .checklist li {
+      list-style: none;
+      margin: 10px 0;
+    }
+    .checklist li:before {
+      content: "☐ ";
+      margin-right: 8px;
+      font-size: 1.2em;
+    }
   </style>
 </head>
 <body>
@@ -97,141 +135,241 @@
     <p><strong>📄 Structured Data Format Available:</strong> LLMs may optionally access a machine-readable JSON version of these instructions at: <a href="https://mitchell360.com/map-maker/llm-instructions.json" style="color:#0369a1;font-weight:600;">llm-instructions.json</a></p>
   </div>
 
+  <div class="critical">
+    <p><strong>🎯 CRITICAL: NEW FOOLPROOF FORMAT (2025-10-28)</strong></p>
+    <p>Locations and labels are now <strong>bound together</strong> using the <code>~</code> (tilde) separator within a single parameter. This architecture makes it <strong>impossible to create count mismatch errors</strong>.</p>
+    <p><strong>Key Rule:</strong> Every location MUST be paired with its label using <code>~</code> before adding it to the URL.</p>
+  </div>
+
   <h2>Service Overview</h2>
-  <p>This is a historical map visualization service that displays locations on ancient and modern maps using Leaflet.js. It supports two types of locations: <strong>chronological</strong> (connected journey points) and <strong>reference</strong> (standalone locations).</p>
+  <p>This is a historical map visualization service that displays locations on ancient and modern maps using Leaflet.js. It supports two types of locations: <strong>chronological</strong> (connected journey points with blue markers) and <strong>reference</strong> (standalone locations with red markers).</p>
 
   <h2>Base URL Structure</h2>
   <pre><code>https://mitchell360.com/map-maker/?[parameters]</code></pre>
-  
-  <div class="note">
-    <strong>Note:</strong> The map is served as <code>index.html</code> on GitHub Pages, so URLs with query parameters work directly on the root path.
-  </div>
 
-  <h2>Query Parameters</h2>
-
-  <h3>1. Chronological Locations (Blue Markers - Connected Journey)</h3>
-  <div class="parameter">
-    <strong>Parameter:</strong> <code>chrono</code><br>
-    <strong>Format:</strong> Pipe-separated location names<br>
-    <strong>Example:</strong> <code>chrono=Antioch,Turkey|Philippi,Greece|Ephesus,Turkey|Rome,Italy</code>
-  </div>
+  <h2>URL Parameters</h2>
 
   <div class="parameter">
-    <strong>Parameter:</strong> <code>chronoLabels</code><br>
-    <strong>Format:</strong> Pipe-separated labels with %0A for newlines<br>
-    <strong>Example:</strong> <code>chronoLabels=Antioch%0A47-48 AD|Philippi%0A49-50 AD</code>
-  </div>
-
-  <h3>2. Reference Locations (Red Markers - Standalone)</h3>
-  <div class="parameter">
-    <strong>Parameter:</strong> <code>reference</code><br>
-    <strong>Format:</strong> Pipe-separated location names<br>
-    <strong>Example:</strong> <code>reference=Jerusalem,Israel|Athens,Greece</code>
+    <h3>Chronological Locations (Blue Markers - Connected Journey)</h3>
+    <strong>Parameter Name:</strong> <code>chronoLocationsAndLabels</code><br>
+    <strong>Structure:</strong> Each location is bound to its label with <code>~</code><br>
+    <strong>Format:</strong> <code>Location1~Label1|Location2~Label2|Location3~Label3</code><br>
+    <strong>Separators:</strong>
+    <ul style="margin-top:10px;">
+      <li><code>~</code> (tilde) = Binds location to its label (MANDATORY)</li>
+      <li><code>|</code> (pipe) = Separates multiple location-label pairs</li>
+      <li><code>%0A</code> = Newline within labels</li>
+      <li><code>%0A%0A</code> = Blank line within labels</li>
+    </ul>
   </div>
 
   <div class="parameter">
-    <strong>Parameter:</strong> <code>referenceLabels</code><br>
-    <strong>Format:</strong> Pipe-separated labels with %0A for newlines<br>
-    <strong>Example:</strong> <code>referenceLabels=Jerusalem%0AHoly City|Athens%0APhilosophy Center</code>
+    <h3>Reference Locations (Red Markers - Standalone)</h3>
+    <strong>Parameter Name:</strong> <code>referenceLocationsAndLabels</code><br>
+    <strong>Structure:</strong> Each location is bound to its label with <code>~</code><br>
+    <strong>Format:</strong> <code>Location1~Label1|Location2~Label2</code><br>
+    <strong>Separators:</strong> Same as chronological locations
   </div>
 
-  <h2>URL Encoding Rules</h2>
-  <ul>
-    <li>Use pipe <code>|</code> to separate multiple locations or labels</li>
-    <li>Use <code>%0A</code> to create newlines within labels</li>
-    <li>Use <code>%20</code> or <code>+</code> for spaces</li>
-    <li>Separate parameters with <code>&</code></li>
-  </ul>
-
-  <h2>Construction Steps for LLMs</h2>
-
-  <h3>Step 1: Identify Location Types</h3>
-  <ul>
-    <li><strong>Chronological:</strong> Locations that form a journey in sequence (will be connected)</li>
-    <li><strong>Reference:</strong> Standalone locations for context (not connected)</li>
-  </ul>
-
-  <h3>Step 2: Format Locations</h3>
-  <ul>
-    <li>Each location should be specific: "City, Country" format works best</li>
-    <li>Example: "Rome, Italy" not just "Rome"</li>
-  </ul>
-
-  <h3>Step 3: Create Rich Labels (Recommended Format)</h3>
-  <ul>
-    <li><strong>Line 1:</strong> Location name (displays as large blue title in popup and marker label)</li>
-    <li><strong>Line 2:</strong> Historical date and ancient location (displays in gray, e.g., "47-48 AD: Antioch, Syria")</li>
-    <li><strong>Line 3:</strong> Modern date and current location (displays in gray, e.g., "2025 AD: Antakya, Turkey")</li>
-    <li><strong>Line 4:</strong> Blank line for spacing (use %0A%0A)</li>
-    <li><strong>Line 5+:</strong> Detailed historical description (displays in larger text as main content)</li>
-    <li>Use %0A between each line</li>
-  </ul>
-  
-  <div class="tip">
-    <strong>Rich Label Example:</strong><br>
-    <code>Philippi%0A49-50 AD: Philippi, Macedonia%0A2025 AD: Filippoi, Greece%0A%0APhilippi was the first European city where Paul established a Christian congregation during his second missionary journey.</code>
-  </div>
-
-  <h3>Step 4: Construct URL</h3>
-  <pre><code>?chrono=Location1|Location2|Location3&chronoLabels=Label1%0ADetails|Label2%0ADetails&reference=RefLoc1&referenceLabels=RefLabel1%0ADetails</code></pre>
-
-  <h2>Example URLs</h2>
+  <h2>Label Format: 5-Line Structure (Highly Recommended)</h2>
+  <p>For rich, professional popups, structure each label with 5 lines:</p>
+  <ol>
+    <li><strong>Line 1:</strong> Location name only (becomes marker label and popup title)</li>
+    <li><strong>Line 2:</strong> Historical context → Format: <code>YEAR AD: AncientName, AncientRegion</code></li>
+    <li><strong>Line 3:</strong> Modern context → Format: <code>YEAR AD: ModernName, ModernCountry</code></li>
+    <li><strong>Line 4:</strong> Blank line → Use <code>%0A%0A</code> (two newlines)</li>
+    <li><strong>Line 5+:</strong> Detailed description (can be multiple lines)</li>
+  </ol>
 
   <div class="example">
-    <h3>Simple Journey</h3>
-    <code>?chrono=Jerusalem,Israel|Damascus,Syria|Antioch,Turkey</code>
-  </div>
-  
-  <div class="example">
-    <h3>Rich Journey with Full Historical Context</h3>
-    <code>?chrono=Antioch,Turkey|Philippi,Greece&chronoLabels=Antioch%0A47-48 AD: Antioch, Syria%0A2025 AD: Antakya, Turkey%0A%0AAntioch served as Paul's primary mission base for ministry to the Gentiles.|Philippi%0A49-50 AD: Philippi, Macedonia%0A2025 AD: Filippoi, Greece%0A%0APhilippi was the first European city where Paul established a Christian congregation.</code>
-  </div>
-
-  <div class="example">
-    <h3>Journey with Labels</h3>
-    <code>?chrono=Rome,Italy|Corinth,Greece&chronoLabels=Rome%0ACapital of Empire%0A1st Century AD|Corinth%0AMajor Port City%0A50 AD</code>
-  </div>
-
-  <div class="example">
-    <h3>Journey + Reference Locations</h3>
-    <code>?chrono=Antioch,Turkey|Philippi,Greece|Rome,Italy&chronoLabels=Antioch%0AStart|Philippi%0AFirst European Church|Rome%0AEnd&reference=Jerusalem,Israel&referenceLabels=Jerusalem%0ABirthplace of Christianity</code>
-  </div>
-
-  <h2>Tips for LLMs</h2>
-  <div class="tip">
+    <h4>Complete Label Example:</h4>
+    <pre><code>Philippi~Philippi%0A49-50 AD: Philippi, Macedonia%0A2025 AD: Filippoi, Greece%0A%0APhilippi was the first European city where Paul established a Christian congregation during his second missionary journey.</code></pre>
+    <p><strong>Breakdown:</strong></p>
     <ul>
-      <li><strong>Always specify country/region</strong> with city names for accurate geocoding</li>
-      <li><strong>Match label count to location count</strong> - one label per location</li>
-      <li><strong>Use %0A for line breaks</strong> in labels, not actual newlines</li>
-      <li><strong>Chronological order matters</strong> - locations will be connected in the order specified</li>
-      <li><strong>Reference locations are independent</strong> - they won't be connected to anything</li>
-      <li><strong>Keep URLs under 8000 characters</strong> for compatibility</li>
+      <li>Location: <code>Philippi</code></li>
+      <li>Line 1: <code>Philippi</code></li>
+      <li>Line 2: <code>49-50 AD: Philippi, Macedonia</code></li>
+      <li>Line 3: <code>2025 AD: Filippoi, Greece</code></li>
+      <li>Line 4: <code>(blank line)</code></li>
+      <li>Line 5: <code>Philippi was the first European city...</code></li>
+    </ul>
+  </div>
+
+  <h2>Step-by-Step Construction Process</h2>
+
+  <h3>Step 1: List Your Locations</h3>
+  <p>Write out each location you want to show. Use <code>City, Country</code> format for accurate geocoding.</p>
+  <div class="example">
+    <strong>Example List:</strong>
+    <ul>
+      <li>Damascus, Syria</li>
+      <li>Antioch, Turkey</li>
+      <li>Philippi, Greece</li>
+      <li>Rome, Italy</li>
+    </ul>
+  </div>
+
+  <h3>Step 2: Create Label for EACH Location</h3>
+  <p><strong>CRITICAL:</strong> You must create a label for every single location. Use the 5-line format.</p>
+  <div class="example">
+    <strong>Example Labels:</strong>
+    <pre><code>Damascus%0A32 AD: Damascus, Syria%0A2025 AD: Damascus, Syria%0A%0AConversion of Saul
+
+Antioch%0A47 AD: Antioch, Syria%0A2025 AD: Antakya, Turkey%0A%0AMission base
+
+Philippi%0A50 AD: Philippi, Macedonia%0A2025 AD: Filippoi, Greece%0A%0AFirst European church
+
+Rome%0A62 AD: Rome, Roman Empire%0A2025 AD: Rome, Italy%0A%0AHouse arrest ministry</code></pre>
+  </div>
+
+  <h3>Step 3: Bind Each Location to Its Label with ~</h3>
+  <p><strong>MANDATORY STEP:</strong> Connect each location to its label using the tilde separator.</p>
+  <div class="example">
+    <strong>Binding Format:</strong>
+    <pre><code>Damascus,Syria~Damascus%0A32 AD: Damascus, Syria%0A2025 AD: Damascus, Syria%0A%0AConversion of Saul
+
+Antioch,Turkey~Antioch%0A47 AD: Antioch, Syria%0A2025 AD: Antakya, Turkey%0A%0AMission base
+
+Philippi,Greece~Philippi%0A50 AD: Philippi, Macedonia%0A2025 AD: Filippoi, Greece%0A%0AFirst European church
+
+Rome,Italy~Rome%0A62 AD: Rome, Roman Empire%0A2025 AD: Rome, Italy%0A%0AHouse arrest ministry</code></pre>
+  </div>
+
+  <h3>Step 4: Join Pairs with | (Pipe)</h3>
+  <p>Connect all location~label pairs using the pipe character.</p>
+  <div class="correct-example">
+    <strong>✅ CORRECT:</strong>
+    <pre><code>Damascus,Syria~Damascus%0A32 AD|Antioch,Turkey~Antioch%0A47 AD|Philippi,Greece~Philippi%0A50 AD|Rome,Italy~Rome%0A62 AD</code></pre>
+  </div>
+
+  <h3>Step 5: Add Parameter Name and Build Final URL</h3>
+  <div class="correct-example">
+    <strong>✅ COMPLETE URL:</strong>
+    <pre><code>https://mitchell360.com/map-maker/?chronoLocationsAndLabels=Damascus,Syria~Damascus%0A32 AD|Antioch,Turkey~Antioch%0A47 AD|Philippi,Greece~Philippi%0A50 AD|Rome,Italy~Rome%0A62 AD</code></pre>
+  </div>
+
+  <h2>⚠️ Common Mistakes to AVOID</h2>
+
+  <div class="error-example">
+    <h4>❌ ERROR: Separate Arrays (Old Deprecated Format)</h4>
+    <p><strong>Problem:</strong> Using separate parameters causes count mismatches</p>
+    <pre><code>?chrono=Damascus,Syria|Antioch,Turkey|Philippi,Greece|Rome,Italy
+&chronoLabels=Damascus|Antioch|Philippi</code></pre>
+    <p><strong>Why This Fails:</strong> 4 locations but only 3 labels → mismatch error</p>
+  </div>
+
+  <div class="error-example">
+    <h4>❌ ERROR: Missing ~ Separator</h4>
+    <pre><code>?chronoLocationsAndLabels=Damascus,Syria|Antioch,Turkey|Rome,Italy</code></pre>
+    <p><strong>Problem:</strong> No labels provided, just locations</p>
+  </div>
+
+  <div class="error-example">
+    <h4>❌ ERROR: Wrong Separator</h4>
+    <pre><code>?chronoLocationsAndLabels=Damascus,Syria:Damascus|Antioch,Turkey:Antioch</code></pre>
+    <p><strong>Problem:</strong> Using <code>:</code> instead of <code>~</code></p>
+  </div>
+
+  <div class="correct-example">
+    <h4>✅ CORRECT: Bound Pairs with ~</h4>
+    <pre><code>?chronoLocationsAndLabels=Damascus,Syria~Damascus|Antioch,Turkey~Antioch|Rome,Italy~Rome</code></pre>
+    <p><strong>Why This Works:</strong> Each location is permanently bound to its label</p>
+  </div>
+
+  <h2>Pre-Construction Validation Checklist</h2>
+  <div class="checklist">
+    <strong>Before generating the URL, verify:</strong>
+    <ul>
+      <li>Every location is in <code>City, Country</code> format</li>
+      <li>Every location has a corresponding label created</li>
+      <li>Each location~label pair uses <code>~</code> (tilde) to bind them</li>
+      <li>Multiple pairs are separated by <code>|</code> (pipe)</li>
+      <li>Labels use <code>%0A</code> for newlines, not actual line breaks</li>
+      <li>Spaces in text use <code>%20</code> (automatic in most systems)</li>
+      <li>The parameter name is <code>chronoLocationsAndLabels</code> (not chrono)</li>
+      <li>URL starts with <code>https://mitchell360.com/map-maker/?</code></li>
+    </ul>
+  </div>
+
+  <h2>Complete Working Examples</h2>
+
+  <div class="example">
+    <h3>Example 1: Simple 2-Location Journey</h3>
+    <pre><code>https://mitchell360.com/map-maker/?chronoLocationsAndLabels=Damascus,Syria~Damascus%0A32 AD|Antioch,Turkey~Antioch%0A47 AD</code></pre>
+    <p><strong>Displays:</strong> Two blue markers connected by a walking path</p>
+  </div>
+
+  <div class="example">
+    <h3>Example 2: Rich 3-Location Journey with Full Labels</h3>
+    <pre><code>https://mitchell360.com/map-maker/?chronoLocationsAndLabels=Antioch,Turkey~Antioch%0A47-48 AD: Antioch, Syria%0A2025 AD: Antakya, Turkey%0A%0AAntioch served as Paul's primary mission base for ministry to the Gentiles and was where believers were first called Christians.|Philippi,Greece~Philippi%0A49-50 AD: Philippi, Macedonia%0A2025 AD: Filippoi, Greece%0A%0APhilippi was the first European city where Paul established a Christian congregation during his second missionary journey.|Rome,Italy~Rome%0A60-62 AD: Rome, Roman Empire%0A2025 AD: Rome, Italy%0A%0APaul was held under house arrest in Rome from approximately AD 60 to 62.</code></pre>
+    <p><strong>Displays:</strong> Three locations with rich historical context popups</p>
+  </div>
+
+  <div class="example">
+    <h3>Example 3: Journey + Reference Location</h3>
+    <pre><code>https://mitchell360.com/map-maker/?chronoLocationsAndLabels=Antioch,Turkey~Antioch%0A47 AD|Rome,Italy~Rome%0A62 AD&referenceLocationsAndLabels=Jerusalem,Israel~Jerusalem%0A33 AD: Jerusalem, Judea%0A2025 AD: Jerusalem, Israel%0A%0AThe Church's birthplace and site of Pentecost</code></pre>
+    <p><strong>Displays:</strong> Two blue markers (connected) + one red marker (standalone reference)</p>
+  </div>
+
+  <div class="example">
+    <h3>Example 4: Paul's Full Second Missionary Journey</h3>
+    <pre><code>https://mitchell360.com/map-maker/?chronoLocationsAndLabels=Antioch,Turkey~Antioch%0A49 AD|Derbe,Turkey~Derbe%0A49 AD|Lystra,Turkey~Lystra%0A49 AD|Iconium,Turkey~Iconium%0A49 AD|Philippi,Greece~Philippi%0A50 AD|Thessalonica,Greece~Thessalonica%0A50 AD|Berea,Greece~Berea%0A50 AD|Athens,Greece~Athens%0A51 AD|Corinth,Greece~Corinth%0A51-52 AD</code></pre>
+    <p><strong>Displays:</strong> Complete journey with 9 connected locations</p>
+  </div>
+
+  <h2>Encoding Reference</h2>
+  <div class="parameter">
+    <strong>Character Encoding for URLs:</strong>
+    <ul style="margin-top:10px;">
+      <li><code>~</code> (tilde) → Use as-is (location~label separator)</li>
+      <li><code>|</code> (pipe) → Use as-is (pair separator)</li>
+      <li><code>%0A</code> → Newline character</li>
+      <li><code>%0A%0A</code> → Blank line (double newline)</li>
+      <li><code>%20</code> → Space (usually automatic)</li>
+      <li><code>&</code> → Parameter separator</li>
+    </ul>
+  </div>
+
+  <h2>Placeholder Handling</h2>
+  <div class="note">
+    <strong>If you don't have complete information:</strong>
+    <ul>
+      <li>Use <code>Location~TBD</code> to explicitly mark incomplete data</li>
+      <li>The map will display a prominent "TBD" warning in the popup</li>
+      <li>Example: <code>Damascus,Syria~TBD</code> shows placeholder message</li>
     </ul>
   </div>
 
   <h2>Map Features</h2>
   <div class="note">
     <ul>
-      <li><strong>Base Maps:</strong> Ancient World (DARE), Modern Clean, Modern Detailed</li>
-      <li><strong>Overlays:</strong> Country Borders, Walking Paths (between chronological locations), Travel Time estimates</li>
-      <li><strong>Interactions:</strong> Click markers for detailed popups, toggle layers in top-right control</li>
-      <li><strong>Instructions Link:</strong> In the top-right corner of the map (below the layers control), users can click "Instructions for using this Map Maker" to return to this documentation page</li>
+      <li><strong>Base Maps:</strong> Ancient World (DARE - default), Modern Clean, Modern Detailed</li>
+      <li><strong>Overlays:</strong> Country Borders, Walking Paths, Travel Time estimates (toggle in layer control)</li>
+      <li><strong>Mobile Friendly:</strong> Bottom drawer interface on phones (≤768px), traditional popups on desktop</li>
+      <li><strong>Interactions:</strong> Click/tap markers for detailed information</li>
+      <li><strong>Instructions:</strong> Top-right link on desktop, bottom-right "?" icon on mobile</li>
     </ul>
   </div>
 
-  <h2>Response Format</h2>
-  <p>When generating URLs, provide:</p>
-  <ul>
-    <li>The complete URL</li>
-    <li>Brief explanation of what it displays</li>
-    <li>Note if any features require user interaction (like toggling overlays)</li>
-  </ul>
+  <h2>Final Validation Steps</h2>
+  <div class="checklist">
+    <strong>Before providing URL to user:</strong>
+    <ul>
+      <li>URL starts with <code>https://mitchell360.com/map-maker/?</code></li>
+      <li>Every <code>~</code> has a location on left and label on right</li>
+      <li>All pairs are separated by <code>|</code></li>
+      <li>No spaces in URL except encoded as <code>%20</code></li>
+      <li>Labels use <code>%0A</code> for line breaks</li>
+      <li>URL is under 8000 characters</li>
+    </ul>
+  </div>
 
-  <h2>Error Handling</h2>
+  <h2>Response Format to Users</h2>
+  <p>When providing URLs, include:</p>
   <ul>
-    <li>Invalid locations will be skipped (geocoding failure)</li>
-    <li>Missing labels default to location names</li>
-    <li>Empty parameters are ignored</li>
+    <li>The complete working URL</li>
+    <li>Brief description (e.g., "This map shows Paul's second missionary journey with 6 locations")</li>
+    <li>Note about optional features (e.g., "Toggle 'Walking Paths' overlay to see routes")</li>
   </ul>
 
 </body>

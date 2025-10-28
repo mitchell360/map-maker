@@ -18,6 +18,14 @@ An interactive map visualization tool built with Leaflet.js that displays histor
 - Keep both HTML and JSON formats synchronized with current URL parameters and features
 
 ## Recent Changes
+- 2025-10-28: **BREAKING CHANGE** - Redesigned URL parameter architecture to eliminate count mismatch errors
+  - **NEW FORMAT:** `chronoLocationsAndLabels` and `referenceLocationsAndLabels` parameters combine location and label data
+  - Uses `~` (tilde) separator to bind each location to its label: `Location~Label|Location~Label`
+  - Eliminates impossible-to-debug mismatch errors when location count ≠ label count
+  - Backward compatible: old `chrono/chronoLabels` format still works with console warning
+  - Implemented TBD placeholder handling for incomplete data
+  - Updated both `llm-instructions.html` and `llm-instructions.json` with new format
+  - Mobile-friendly: bottom drawer on ≤768px devices, traditional popups on desktop
 - 2025-10-26: Added static LLM instructions files
   - **Created `llm-instructions.html`** - beautifully formatted HTML page with comprehensive URL construction instructions for LLMs
   - **Created `llm-instructions.json`** - structured JSON version for programmatic access
@@ -76,21 +84,34 @@ An interactive map visualization tool built with Leaflet.js that displays histor
 
 ## URL Parameters
 
-### Chronological Locations (Blue Markers)
-- `chrono` - Pipe-separated locations (e.g., `Antioch,Turkey|Philippi,Greece|Rome,Italy`)
-- `chronoLabels` - Pipe-separated labels with `%0A` for newlines
+### NEW FORMAT (Recommended - 2025-10-28)
+Each parameter combines locations and labels together, eliminating count mismatch errors.
 
-### Reference Locations (Red Markers)
-- `reference` - Pipe-separated locations (e.g., `Jerusalem,Israel|Athens,Greece`)
-- `referenceLabels` - Pipe-separated labels with `%0A` for newlines
+**Chronological Locations (Blue Markers - Connected Journey):**
+- `chronoLocationsAndLabels` - Location-label pairs using `~` separator, multiple pairs with `|`
+- Format: `Location1~Label1|Location2~Label2|Location3~Label3`
+- Example: `chronoLocationsAndLabels=Antioch,Turkey~Antioch%0A47-48 AD|Rome,Italy~Rome%0A62 AD`
 
-### Example URL
+**Reference Locations (Red Markers - Standalone):**
+- `referenceLocationsAndLabels` - Location-label pairs using `~` separator, multiple pairs with `|`
+- Format: `Location1~Label1|Location2~Label2`
+- Example: `referenceLocationsAndLabels=Jerusalem,Israel~Jerusalem%0A33 AD%0A%0AThe Church's birthplace`
+
+**Example URL (New Format):**
 ```
-?chrono=Antioch,Turkey|Rome,Italy
-&chronoLabels=Antioch%0A47-48 AD|Rome%0A62 AD
-&reference=Jerusalem,Israel
-&referenceLabels=Jerusalem%0AThe Church's birthplace
+?chronoLocationsAndLabels=Antioch,Turkey~Antioch%0A47-48 AD|Rome,Italy~Rome%0A62 AD
+&referenceLocationsAndLabels=Jerusalem,Israel~Jerusalem%0A33 AD%0A%0AThe Church's birthplace
 ```
+
+### OLD FORMAT (Deprecated - Still Supported)
+Legacy parameters with separate location and label arrays. Still works but displays console warning.
+
+- `chrono` - Pipe-separated locations
+- `chronoLabels` - Pipe-separated labels (must match location count)
+- `reference` - Pipe-separated locations
+- `referenceLabels` - Pipe-separated labels (must match location count)
+
+**Migration:** Use new combined format to avoid count mismatch errors.
 
 ## Default Test Data
 **Chronological Journey (Blue):**
