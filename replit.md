@@ -11,11 +11,10 @@ An interactive map visualization tool built with Leaflet.js that displays histor
 - Simple Python static file server for Replit development/testing
 
 ## User Preferences & Development Practices
-- **CRITICAL:** Whenever adding or updating features, ALWAYS update the LLM instructions in both:
-  - `llm-instructions.html` - Human-readable formatted instructions
-  - `llm-instructions.json` - Machine-readable structured data
-- These static files work with GitHub Pages and must always reflect the latest functionality
-- Keep both HTML and JSON formats synchronized with current URL parameters and features
+- **CRITICAL:** Whenever adding or updating features, ALWAYS update the LLM instructions:
+  - `llm.md` - Single Markdown file following web standards for LLM instruction documentation
+- This static file works with GitHub Pages and must always reflect the latest functionality
+- Markdown format is both LLM-friendly and human-readable when rendered on GitHub
 
 ## Recent Changes
 - 2025-10-28: **ADDED MAP TITLE AND LOADING PROGRESS OVERLAY**
@@ -27,7 +26,7 @@ An interactive map visualization tool built with Leaflet.js that displays histor
   - Displays route calculation progress (e.g., "Route 2 of 3: Philippi → Ephesus")
   - Automatically hides when map is fully rendered
   - **Bug Fixes:** Fixed template literal syntax error in numbered badge HTML, fixed double-decoding issue in title parameter
-  - **Documentation:** Updated both `llm-instructions.html` and `llm-instructions.json` with complete title parameter documentation
+  - **Documentation:** Updated `llm.md` with complete title parameter documentation
 - 2025-10-28: **ADDED AUTOMATIC CACHE-BUSTING** - For Replit development preview only
   - Automatically appends `?_cb=[timestamp]` to URL if not present
   - Bypasses Replit's aggressive preview iframe caching
@@ -50,13 +49,13 @@ An interactive map visualization tool built with Leaflet.js that displays histor
   - Eliminates impossible-to-debug mismatch errors when location count ≠ label count
   - Backward compatible: old `chrono/chronoLabels` format still works with console warning
   - Implemented TBD placeholder handling for incomplete data
-  - Updated both `llm-instructions.html` and `llm-instructions.json` with new format
-- 2025-10-26: Added static LLM instructions files
-  - **Created `llm-instructions.html`** - beautifully formatted HTML page with comprehensive URL construction instructions for LLMs
-  - **Created `llm-instructions.json`** - structured JSON version for programmatic access
-  - Both files are static and work with GitHub Pages hosting
-  - Instructions include parameter definitions, examples, encoding rules, construction steps, and tips
-  - Server prints availability on startup for local development
+  - Updated `llm.md` with new format
+- 2025-10-28: **CONSOLIDATED LLM INSTRUCTIONS TO SINGLE FILE**
+  - **Created `llm.md`** - Single source of truth following web standards for LLM instruction documentation
+  - Replaced separate `llm-instructions.html` and `llm-instructions.json` files (deleted to prevent drift)
+  - Markdown format is both LLM-friendly and beautifully rendered on GitHub Pages
+  - Updated "?" button to open `llm.md` in new window (`target="_blank"`)
+  - Single file is easier to maintain and impossible to get out of sync
 - 2025-10-26: Simplified to use default Leaflet tooltip behavior
   - **Removed custom leader line positioning code** - simplified to use Leaflet's built-in tooltip system
   - **Clean, minimal labels** positioned directly above markers using default `bindTooltip()`
@@ -99,9 +98,8 @@ An interactive map visualization tool built with Leaflet.js that displays histor
   - CSS styling for map, popups, markers, and labels
   - JavaScript for geocoding, routing, and map rendering
   - Leaflet.js integration via CDN
-- Static instruction files for LLMs:
-  - `llm-instructions.html` - Human-readable formatted guide
-  - `llm-instructions.json` - Machine-readable structured data
+- Static instruction file for LLMs:
+  - `llm.md` - Comprehensive Markdown guide (follows web standards for LLM instruction documentation)
 - Map Tile Sources:
   - DARE (Digital Atlas of the Roman Empire) - dh.gu.se
   - CartoDB Positron (modern clean)
@@ -181,8 +179,7 @@ When enabled, shows color-coded travel paths where each segment between consecut
 ```
 .
 ├── index.html              # Main map application (static)
-├── llm-instructions.html   # Human-readable LLM instructions (static)
-├── llm-instructions.json   # Machine-readable LLM instructions (static)
+├── llm.md                  # LLM instruction documentation (static, web standard)
 └── replit.md              # Project documentation
 ```
 
