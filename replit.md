@@ -17,6 +17,12 @@ An interactive map visualization tool built with Leaflet.js that displays histor
 - Markdown format is both LLM-friendly and human-readable when rendered on GitHub
 
 ## Recent Changes
+- 2025-10-28: **REMOVED BACKWARD COMPATIBILITY** - Simplified codebase by removing legacy parameter support
+  - Removed all backward compatibility code for old `chrono`/`chronoLabels` parameter format
+  - Only supports current `chronoLocationsAndLabels` and `referenceLocationsAndLabels` parameters
+  - Removed deprecation warnings and old format parsing logic
+  - Updated all documentation (llm.md, replit.md) to reference only current format
+  - Cleaner, simpler codebase with single clear API contract
 - 2025-10-28: **ADDED MAP TITLE AND LOADING PROGRESS OVERLAY**
   - **Map Title:** Optional `title` URL parameter displays centered title above map with elegant serif styling
   - Default title "Paul's Missionary Journeys" shown when no title parameter provided
@@ -43,13 +49,13 @@ An interactive map visualization tool built with Leaflet.js that displays histor
   - Added visibility:hidden + pointer-events:none to closed drawer for proper map usability
   - Cleaner, more maintainable codebase with single code path for all devices
   - **Instructions button** - Now always displays as blue circular "?" button on all devices
-- 2025-10-28: **BREAKING CHANGE** - Redesigned URL parameter architecture to eliminate count mismatch errors
-  - **NEW FORMAT:** `chronoLocationsAndLabels` and `referenceLocationsAndLabels` parameters combine location and label data
+- 2025-10-28: **URL PARAMETER ARCHITECTURE** - Redesigned to eliminate count mismatch errors
+  - `chronoLocationsAndLabels` and `referenceLocationsAndLabels` parameters combine location and label data
   - Uses `~` (tilde) separator to bind each location to its label: `Location~Label|Location~Label`
   - Eliminates impossible-to-debug mismatch errors when location count ≠ label count
-  - Backward compatible: old `chrono/chronoLabels` format still works with console warning
   - Implemented TBD placeholder handling for incomplete data
-  - Updated `llm.md` with new format
+  - Removed legacy format support for cleaner, more maintainable codebase
+  - Updated `llm.md` with complete format documentation
 - 2025-10-28: **CONSOLIDATED LLM INSTRUCTIONS TO SINGLE FILE**
   - **Created `llm.md`** - Single source of truth following web standards for LLM instruction documentation
   - Replaced separate `llm-instructions.html` and `llm-instructions.json` files (deleted to prevent drift)
@@ -112,7 +118,6 @@ An interactive map visualization tool built with Leaflet.js that displays histor
 
 ## URL Parameters
 
-### NEW FORMAT (Recommended - 2025-10-28)
 Each parameter combines locations and labels together, eliminating count mismatch errors.
 
 **Chronological Locations (Blue Markers - Connected Journey):**
@@ -125,21 +130,11 @@ Each parameter combines locations and labels together, eliminating count mismatc
 - Format: `Location1~Label1|Location2~Label2`
 - Example: `referenceLocationsAndLabels=Jerusalem,Israel~Jerusalem%0A33 AD%0A%0AThe Church's birthplace`
 
-**Example URL (New Format):**
+**Example URL:**
 ```
 ?chronoLocationsAndLabels=Antioch,Turkey~Antioch%0A47-48 AD|Rome,Italy~Rome%0A62 AD
 &referenceLocationsAndLabels=Jerusalem,Israel~Jerusalem%0A33 AD%0A%0AThe Church's birthplace
 ```
-
-### OLD FORMAT (Deprecated - Still Supported)
-Legacy parameters with separate location and label arrays. Still works but displays console warning.
-
-- `chrono` - Pipe-separated locations
-- `chronoLabels` - Pipe-separated labels (must match location count)
-- `reference` - Pipe-separated locations
-- `referenceLabels` - Pipe-separated labels (must match location count)
-
-**Migration:** Use new combined format to avoid count mismatch errors.
 
 ## Default Test Data
 **Chronological Journey (Blue):**
@@ -173,7 +168,7 @@ When enabled, shows color-coded travel paths where each segment between consecut
 **For GitHub Pages Deployment:**
 - Files are served as-is from the repository
 - `index.html` is automatically served at the root path
-- URL parameters work directly: `https://mitchell360.com/map-maker/?chrono=Location1|Location2`
+- URL parameters work directly: `https://mitchell360.com/map-maker/?chronoLocationsAndLabels=Location1~Label1|Location2~Label2`
 
 ## File Structure
 ```
