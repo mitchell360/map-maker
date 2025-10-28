@@ -94,11 +94,14 @@
       border-top-color:#dc2626!important;
     }
     
-    /* Arrow markers for travel direction */
+    /* Numbered arrow markers for travel direction */
     .arrow-marker{
       background:transparent!important;
       border:none!important;
       box-shadow:none!important;
+    }
+    .arrow-marker div{
+      font-family:system-ui,-apple-system,sans-serif;
     }
   </style>
 </head>
@@ -365,14 +368,6 @@ async function getWalkingRoute(start,end){
   // Purple color palette for different segments (accessible and high contrast)
   const purpleColors=['#9333ea','#7c3aed','#6d28d9','#5b21b6','#4c1d95'];
   
-  // Create arrow icon for direction indicators
-  const arrowIcon=L.divIcon({
-    className:'arrow-marker',
-    html:'<div style="width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:14px solid rgba(255,255,255,0.9);transform:rotate(0deg);filter:drop-shadow(0 1px 2px rgba(0,0,0,0.3))"></div>',
-    iconSize:[16,14],
-    iconAnchor:[8,7]
-  });
-  
   // Helper function to calculate point along a path at given distance
   function getPointAtDistance(latlngs,targetDist){
     let accumulated=0;
@@ -403,9 +398,9 @@ async function getWalkingRoute(start,end){
     if(route&&route.geometry){
       const latlngs=route.geometry.coordinates.map(c=>[c[1],c[0]]);
       
-      // Draw main path with white stroke for contrast
-      L.polyline(latlngs,{color:'#ffffff',weight:7,opacity:0.9}).addTo(travelLineAndTime);
-      L.polyline(latlngs,{color:segmentColor,weight:5,opacity:0.95}).addTo(travelLineAndTime);
+      // Draw main path with white stroke for contrast (thinner lines)
+      L.polyline(latlngs,{color:'#ffffff',weight:5,opacity:0.9}).addTo(travelLineAndTime);
+      L.polyline(latlngs,{color:segmentColor,weight:3,opacity:0.95}).addTo(travelLineAndTime);
       
       // Calculate total path length
       let pathLength=0;
@@ -413,21 +408,22 @@ async function getWalkingRoute(start,end){
         pathLength+=map.distance(latlngs[j],latlngs[j+1]);
       }
       
-      // Add arrow markers at regular intervals (every ~150km or at least 3 arrows per segment)
+      // Add numbered arrow markers at regular intervals
+      const segmentNumber=i+1;
       const arrowInterval=Math.min(150000,pathLength/4);
-      const numArrows=Math.max(2,Math.floor(pathLength/arrowInterval));
+      const numArrows=Math.max(3,Math.floor(pathLength/arrowInterval));
       
       for(let a=1;a<=numArrows;a++){
         const distAlongPath=(pathLength/(numArrows+1))*a;
         const point=getPointAtDistance(latlngs,distAlongPath);
         if(point){
-          const arrowHtml=`<div style="width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:12px solid ${segmentColor};transform:rotate(${point.bearing+90}deg);filter:drop-shadow(0 1px 3px rgba(0,0,0,0.4))"></div>`;
+          const arrowHtml=`<div style="width:24px;height:24px;background:#ffffff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:#000;box-shadow:0 2px 6px rgba(0,0,0,0.3),0 0 0 2px ${segmentColor}">${segmentNumber}</div>`;
           const arrow=L.marker([point.lat,point.lng],{
             icon:L.divIcon({
               className:'arrow-marker',
               html:arrowHtml,
-              iconSize:[14,12],
-              iconAnchor:[7,6]
+              iconSize:[24,24],
+              iconAnchor:[12,12]
             }),
             interactive:false
           }).addTo(travelLineAndTime);

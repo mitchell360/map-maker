@@ -70,7 +70,8 @@ An interactive map visualization tool built with Leaflet.js that displays histor
 - **Travel Line and Time**: Optional overlay showing:
   - Color-coded travel paths between chronological locations (purple gradient for accessibility)
   - White stroke border around lines for high contrast against map backgrounds
-  - Directional arrow markers along each path showing travel direction
+  - Numbered circular badges along each path (all segment 1 arrows show "1", segment 2 show "2", etc.)
+  - White circles with colored borders matching the segment color
   - Travel time information box with color legend matching line colors
   - Estimated ancient travel time for each segment and total journey
   - Uses OSRM API for walking route calculations
@@ -150,7 +151,8 @@ Legacy parameters with separate location and label arrays. Still works but displ
 **Travel Line and Time Display:**
 When enabled, shows color-coded travel paths where each segment between consecutive locations uses a different shade of purple (for web accessibility). Each line includes:
 - White stroke border for high contrast against the ancient map background
-- Arrow markers at regular intervals showing the direction of travel
+- Numbered circular badges at regular intervals (e.g., all arrows on first segment show "1", second segment show "2")
+- White circles with black numbers and colored borders matching each segment
 - Color legend in the travel time information box matching the purple gradient
 - Estimated travel duration for each leg and the total journey
 
