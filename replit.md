@@ -62,21 +62,23 @@ An interactive map visualization tool built with Leaflet.js that displays histor
 
 ## Features
 - **Two Location Types**:
-  - Chronological locations (blue markers) - Connected by walking paths in order
+  - Chronological locations (blue markers) - Connected by color-coded travel paths in order
   - Reference locations (red markers) - Standalone historical context points
 - **Custom Locations**: Specify both types via URL parameters
-- **Rich Popups**: Click markers to see detailed historical information with custom styling
+- **Responsive Drawer Interface**: Click markers to see detailed historical information in a drawer (bottom sheet on mobile, centered modal on desktop)
 - **Permanent Labels**: Location names displayed above markers (blue for chronological, red for reference)
-- **Walking Paths**: Optional blue paths showing walking routes between chronological locations (OSRM API)
-- **Travel Time**: Optional ancient travel time estimation for chronological journey
+- **Travel Line and Time**: Optional overlay showing:
+  - Color-coded travel paths between chronological locations (different shade of orange for each segment)
+  - Travel time information box with legend matching line colors
+  - Estimated ancient travel time for each segment and total journey
+  - Uses OSRM API for walking route calculations
 - **Multiple Base Maps**:
   - Ancient World (DARE) - Default, Digital Atlas of the Roman Empire
   - Modern Clean - Minimal contemporary map
   - Modern Detailed - Full modern map with roads
 - **Toggleable Overlays**:
   - Country Borders - Political boundaries
-  - Walking Paths - Route visualization
-  - Travel Time - Journey duration display
+  - Travel Line and Time - Color-coded routes with travel duration display
 - **URL-Driven**: All features controllable via query parameters
 
 ## Architecture
@@ -141,7 +143,10 @@ Legacy parameters with separate location and label arrays. Still works but displ
 ## Map Controls
 **Layer Control (upper right):**
 - Base Layers: Ancient World (default), Modern Clean, Modern Detailed
-- Overlays: Country Borders, Walking Paths, Travel Time (all hidden by default)
+- Overlays: Country Borders, Travel Line and Time (all hidden by default)
+
+**Travel Line and Time Display:**
+When enabled, shows color-coded travel paths where each segment between consecutive locations uses a different shade of orange. The travel time information box displays a color legend matching the line segments, showing estimated travel duration for each leg and the total journey.
 
 ## Running the Project
 **For Replit Development/Testing:**
