@@ -93,6 +93,13 @@
     .leaflet-tooltip.marker-label-reference::before{
       border-top-color:#dc2626!important;
     }
+    
+    /* Arrow markers for travel direction */
+    .arrow-marker{
+      background:transparent!important;
+      border:none!important;
+      box-shadow:none!important;
+    }
   </style>
 </head>
 <body>
@@ -355,8 +362,35 @@ async function getWalkingRoute(start,end){
     allMarkers.push(mk);
   }
   
-  // Orange color palette for different segments (light to dark orange)
-  const orangeColors=['#fed7aa','#fdba74','#fb923c','#f97316','#ea580c','#c2410c','#9a3412','#7c2d12'];
+  // Purple color palette for different segments (accessible and high contrast)
+  const purpleColors=['#9333ea','#7c3aed','#6d28d9','#5b21b6','#4c1d95'];
+  
+  // Create arrow icon for direction indicators
+  const arrowIcon=L.divIcon({
+    className:'arrow-marker',
+    html:'<div style="width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:14px solid rgba(255,255,255,0.9);transform:rotate(0deg);filter:drop-shadow(0 1px 2px rgba(0,0,0,0.3))"></div>',
+    iconSize:[16,14],
+    iconAnchor:[8,7]
+  });
+  
+  // Helper function to calculate point along a path at given distance
+  function getPointAtDistance(latlngs,targetDist){
+    let accumulated=0;
+    for(let i=0;i<latlngs.length-1;i++){
+      const p1=latlngs[i];
+      const p2=latlngs[i+1];
+      const segDist=map.distance(p1,p2);
+      if(accumulated+segDist>=targetDist){
+        const ratio=(targetDist-accumulated)/segDist;
+        const lat=p1[0]+(p2[0]-p1[0])*ratio;
+        const lng=p1[1]+(p2[1]-p1[1])*ratio;
+        const bearing=Math.atan2(p2[1]-p1[1],p2[0]-p1[0])*180/Math.PI;
+        return{lat,lng,bearing};
+      }
+      accumulated+=segDist;
+    }
+    return null;
+  }
   
   // Draw travel paths between consecutive chronological locations with different colors
   let totalDistance=0;
@@ -364,11 +398,42 @@ async function getWalkingRoute(start,end){
   const legColors=[];
   for(let i=0;i<chronoCoords.length-1;i++){
     const route=await getWalkingRoute(chronoCoords[i],chronoCoords[i+1]);
-    const segmentColor=orangeColors[i%orangeColors.length];
+    const segmentColor=purpleColors[i%purpleColors.length];
     legColors.push(segmentColor);
     if(route&&route.geometry){
       const latlngs=route.geometry.coordinates.map(c=>[c[1],c[0]]);
-      L.polyline(latlngs,{color:segmentColor,weight:4,opacity:0.8}).addTo(travelLineAndTime);
+      
+      // Draw main path with white stroke for contrast
+      L.polyline(latlngs,{color:'#ffffff',weight:7,opacity:0.9}).addTo(travelLineAndTime);
+      L.polyline(latlngs,{color:segmentColor,weight:5,opacity:0.95}).addTo(travelLineAndTime);
+      
+      // Calculate total path length
+      let pathLength=0;
+      for(let j=0;j<latlngs.length-1;j++){
+        pathLength+=map.distance(latlngs[j],latlngs[j+1]);
+      }
+      
+      // Add arrow markers at regular intervals (every ~150km or at least 3 arrows per segment)
+      const arrowInterval=Math.min(150000,pathLength/4);
+      const numArrows=Math.max(2,Math.floor(pathLength/arrowInterval));
+      
+      for(let a=1;a<=numArrows;a++){
+        const distAlongPath=(pathLength/(numArrows+1))*a;
+        const point=getPointAtDistance(latlngs,distAlongPath);
+        if(point){
+          const arrowHtml=`<div style="width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:12px solid ${segmentColor};transform:rotate(${point.bearing+90}deg);filter:drop-shadow(0 1px 3px rgba(0,0,0,0.4))"></div>`;
+          const arrow=L.marker([point.lat,point.lng],{
+            icon:L.divIcon({
+              className:'arrow-marker',
+              html:arrowHtml,
+              iconSize:[14,12],
+              iconAnchor:[7,6]
+            }),
+            interactive:false
+          }).addTo(travelLineAndTime);
+        }
+      }
+      
       totalDistance+=route.distance;
       legDistances.push(route.distance);
     }else{
