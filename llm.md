@@ -6,9 +6,9 @@
 
 ---
 
-## 🎯 CRITICAL: Foolproof Format (2025-10-28)
+## 🎯 CRITICAL: Foolproof Format
 
-Locations and labels are now **bound together** using the `~` (tilde) separator within a single parameter. This architecture makes it **impossible to create count mismatch errors**.
+Locations and labels are **bound together** using the `~` (tilde) separator within a single parameter. This architecture makes it **impossible to create count mismatch errors**.
 
 **Key Rule:** Every location MUST be paired with its label using `~` before adding it to the URL.
 
@@ -192,20 +192,7 @@ https://mitchell360.com/map-maker/?chronoLocationsAndLabels=Damascus,Syria~Damas
 
 ## ⚠️ Common Mistakes to AVOID
 
-### ❌ ERROR 1: Separate Arrays (Old Deprecated Format)
-
-**Problem:** Using separate parameters causes count mismatches
-
-```
-?chrono=Damascus,Syria|Antioch,Turkey|Philippi,Greece|Rome,Italy
-&chronoLabels=Damascus|Antioch|Philippi
-```
-
-**Why This Fails:** 4 locations but only 3 labels → mismatch error
-
----
-
-### ❌ ERROR 2: Missing ~ Separator
+### ❌ ERROR 1: Missing ~ Separator
 
 ```
 ?chronoLocationsAndLabels=Damascus,Syria|Antioch,Turkey|Rome,Italy
@@ -215,7 +202,7 @@ https://mitchell360.com/map-maker/?chronoLocationsAndLabels=Damascus,Syria~Damas
 
 ---
 
-### ❌ ERROR 3: Wrong Separator
+### ❌ ERROR 2: Wrong Separator
 
 ```
 ?chronoLocationsAndLabels=Damascus,Syria:Damascus|Antioch,Turkey:Antioch
@@ -245,7 +232,7 @@ Before generating the URL, verify:
 - [ ] Multiple pairs are separated by `|` (pipe)
 - [ ] Labels use `%0A` for newlines, not actual line breaks
 - [ ] Spaces in text use `%20` (automatic in most systems)
-- [ ] The parameter name is `chronoLocationsAndLabels` (not chrono)
+- [ ] The parameter name is `chronoLocationsAndLabels` for journey locations
 - [ ] URL starts with `https://mitchell360.com/map-maker/?`
 
 ---
@@ -363,24 +350,6 @@ When providing URLs to users, include:
 1. **The complete working URL**
 2. **Brief description** (e.g., "This map shows Paul's second missionary journey with 6 locations")
 3. **Note about optional features** (e.g., "Toggle 'Travel Line and Time' overlay to see routes and estimated ancient travel times")
-
----
-
-## Breaking Changes & Backward Compatibility
-
-### New Format (2025-10-28)
-- `chronoLocationsAndLabels` - Location and label bound together
-- `referenceLocationsAndLabels` - Location and label bound together
-
-### Deprecated Format (Still Supported)
-- `chrono` + `chronoLabels` - Separate arrays
-- `reference` + `referenceLabels` - Separate arrays
-
-**Status:** Old format still works but displays deprecation warning in browser console
-
-**Why Deprecated:** Separate arrays cause count mismatch errors that are impossible to debug
-
-**Migration Path:** Use new format where location and label are bound with `~`
 
 ---
 
