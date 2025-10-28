@@ -18,6 +18,15 @@ An interactive map visualization tool built with Leaflet.js that displays histor
 - Keep both HTML and JSON formats synchronized with current URL parameters and features
 
 ## Recent Changes
+- 2025-10-28: **MAJOR SIMPLIFICATION** - Unified drawer UX for all devices, eliminated mobile detection complexity
+  - **Removed isMobile() function** - No more runtime mobile detection logic
+  - **Single interaction model** - All markers use drawer click handler (no if/else branching)
+  - **CSS-driven responsive design** - Media queries handle all viewport adaptations automatically
+  - **Desktop:** Centered modal with scale animation, larger fonts, no pull handle
+  - **Mobile:** Bottom sheet with swipe gestures, pull handle visible
+  - **Fixed pointer-events bug** - Hidden drawer no longer blocks map interactions
+  - Added visibility:hidden + pointer-events:none to closed drawer for proper map usability
+  - Cleaner, more maintainable codebase with single code path for all devices
 - 2025-10-28: **BREAKING CHANGE** - Redesigned URL parameter architecture to eliminate count mismatch errors
   - **NEW FORMAT:** `chronoLocationsAndLabels` and `referenceLocationsAndLabels` parameters combine location and label data
   - Uses `~` (tilde) separator to bind each location to its label: `Location~Label|Location~Label`
@@ -25,7 +34,6 @@ An interactive map visualization tool built with Leaflet.js that displays histor
   - Backward compatible: old `chrono/chronoLabels` format still works with console warning
   - Implemented TBD placeholder handling for incomplete data
   - Updated both `llm-instructions.html` and `llm-instructions.json` with new format
-  - Mobile-friendly: bottom drawer on ≤768px devices, traditional popups on desktop
 - 2025-10-26: Added static LLM instructions files
   - **Created `llm-instructions.html`** - beautifully formatted HTML page with comprehensive URL construction instructions for LLMs
   - **Created `llm-instructions.json`** - structured JSON version for programmatic access
