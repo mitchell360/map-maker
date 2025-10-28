@@ -9,11 +9,12 @@
   <style>
     html,body,#map{height:100%;margin:0;padding:0}
     
-    /* Content styling for drawer */
-    .popup-line{display:block;white-space:pre-wrap;margin-bottom:14px;line-height:1.5}
-    .popup-line:first-child{font-weight:700;font-size:32px;color:#0369a1;letter-spacing:-.01em;margin-bottom:12px;line-height:1.1}
-    .popup-line:nth-child(2),.popup-line:nth-child(3){color:#6b7280;font-size:16px;margin-bottom:8px}
-    .popup-line:nth-child(n+4){color:#1f2937;font-size:18px;margin-top:20px;margin-bottom:10px}
+    /* Content styling for drawer - elegant serif fonts matching old popups */
+    .drawer-content{font-family:Georgia,Cambria,"Times New Roman",serif}
+    .popup-line{display:block;white-space:pre-wrap;margin-bottom:14px;line-height:1.6}
+    .popup-line:first-child{font-family:Georgia,Cambria,"Times New Roman",serif;font-weight:700;font-size:32px;color:#0b5394;letter-spacing:0;margin-bottom:16px;line-height:1.2}
+    .popup-line:nth-child(2),.popup-line:nth-child(3){color:#5f6368;font-size:15px;margin-bottom:10px;line-height:1.5}
+    .popup-line:nth-child(n+4){color:#202124;font-size:16px;margin-top:18px;margin-bottom:12px;line-height:1.6}
     .popup-line:last-child{margin-bottom:0}
     
     /* Unified drawer - works on all devices */
@@ -34,9 +35,9 @@
       .drawer{top:50%;left:50%;right:auto;bottom:auto;transform:translate(-50%,-50%) scale(0.9);border-radius:12px;max-width:600px;width:90%;max-height:80vh;opacity:0;visibility:hidden}
       .drawer.active{transform:translate(-50%,-50%) scale(1);opacity:1;visibility:visible}
       .drawer-handle{display:none}
-      .popup-line:first-child{font-size:42px}
-      .popup-line:nth-child(2),.popup-line:nth-child(3){font-size:18px}
-      .popup-line:nth-child(n+4){font-size:20px}
+      .popup-line:first-child{font-size:48px}
+      .popup-line:nth-child(2),.popup-line:nth-child(3){font-size:17px}
+      .popup-line:nth-child(n+4){font-size:18px}
     }
     
     /* Travel time display - responsive */
