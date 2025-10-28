@@ -121,6 +121,15 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
   integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script>
+// Cache-busting: Auto-add version parameter to force fresh loads in Replit preview
+(function(){
+  const url=new URL(window.location.href);
+  if(!url.searchParams.has('_cb')){
+    url.searchParams.set('_cb',Date.now());
+    window.location.replace(url.toString());
+  }
+})();
+
 // Utility functions
 function qs(name){const u=new URL(location.href);return u.searchParams.get(name);}
 

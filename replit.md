@@ -18,6 +18,12 @@ An interactive map visualization tool built with Leaflet.js that displays histor
 - Keep both HTML and JSON formats synchronized with current URL parameters and features
 
 ## Recent Changes
+- 2025-10-28: **ADDED AUTOMATIC CACHE-BUSTING** - For Replit development preview only
+  - Automatically appends `?_cb=[timestamp]` to URL if not present
+  - Bypasses Replit's aggressive preview iframe caching
+  - Ensures updates always appear without manual cache clearing
+  - **NOTE:** This is ONLY needed for Replit development - GitHub Pages doesn't have this caching issue
+  - Pure client-side JavaScript solution (no server code)
 - 2025-10-28: **MAJOR SIMPLIFICATION** - Unified drawer UX for all devices, eliminated mobile detection complexity
   - **Removed isMobile() function** - No more runtime mobile detection logic
   - **Single interaction model** - All markers use drawer click handler (no if/else branching)
@@ -27,6 +33,7 @@ An interactive map visualization tool built with Leaflet.js that displays histor
   - **Fixed pointer-events bug** - Hidden drawer no longer blocks map interactions
   - Added visibility:hidden + pointer-events:none to closed drawer for proper map usability
   - Cleaner, more maintainable codebase with single code path for all devices
+  - **Instructions button** - Now always displays as blue circular "?" button on all devices
 - 2025-10-28: **BREAKING CHANGE** - Redesigned URL parameter architecture to eliminate count mismatch errors
   - **NEW FORMAT:** `chronoLocationsAndLabels` and `referenceLocationsAndLabels` parameters combine location and label data
   - Uses `~` (tilde) separator to bind each location to its label: `Location~Label|Location~Label`
