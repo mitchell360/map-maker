@@ -408,22 +408,22 @@ async function getWalkingRoute(start,end){
         pathLength+=map.distance(latlngs[j],latlngs[j+1]);
       }
       
-      // Add numbered arrow markers at regular intervals
+      // Add numbered arrow markers at regular intervals (25% fewer markers)
       const segmentNumber=i+1;
       const arrowInterval=Math.min(150000,pathLength/4);
-      const numArrows=Math.max(3,Math.floor(pathLength/arrowInterval));
+      const numArrows=Math.max(2,Math.floor((pathLength/arrowInterval)*0.75));
       
       for(let a=1;a<=numArrows;a++){
         const distAlongPath=(pathLength/(numArrows+1))*a;
         const point=getPointAtDistance(latlngs,distAlongPath);
         if(point){
-          const arrowHtml=`<div style="width:24px;height:24px;background:#ffffff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:#000;box-shadow:0 2px 6px rgba(0,0,0,0.3),0 0 0 2px ${segmentColor}">${segmentNumber}</div>`;
+          const arrowHtml=`<div style="width:18px;height:18px;background:#ffffff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:10px;color:#000;box-shadow:0 2px 6px rgba(0,0,0,0.3),0 0 0 2px ${segmentColor}">${segmentNumber}</div>`;
           const arrow=L.marker([point.lat,point.lng],{
             icon:L.divIcon({
               className:'arrow-marker',
               html:arrowHtml,
-              iconSize:[24,24],
-              iconAnchor:[12,12]
+              iconSize:[18,18],
+              iconAnchor:[9,9]
             }),
             interactive:false
           }).addTo(travelLineAndTime);
@@ -458,13 +458,14 @@ async function getWalkingRoute(start,end){
         return {timeStr:timeStr.trim(),distKm:distKm.toFixed(0),totalDays};
       };
       
-      // Build legs display with color legend
+      // Build legs display with segment numbers (no color squares)
       let legsHtml='';
       for(let i=0;i<legDistances.length;i++){
         if(legDistances[i]>0){
           const legTime=formatTime(legDistances[i]);
-          const colorBox=`<span style="display:inline-block;width:12px;height:12px;background:${legColors[i]};border-radius:2px;margin-right:6px;vertical-align:middle;"></span>`;
-          legsHtml+=`<div>${colorBox}${chronoNames[i]} → ${chronoNames[i+1]}: <span style="color:#6b7280;">${legTime.timeStr} (${legTime.distKm} km)</span></div>`;
+          const segmentNum=i+1;
+          const segmentLabel=`<span style="display:inline-block;width:18px;height:18px;background:#ffffff;border-radius:50%;text-align:center;line-height:18px;font-size:10px;font-weight:700;border:2px solid ${legColors[i]};margin-right:8px;vertical-align:middle;">${segmentNum}</span>`;
+          legsHtml+=`<div>${segmentLabel}${chronoNames[i]} → ${chronoNames[i+1]}: <span style="color:#6b7280;">${legTime.timeStr} (${legTime.distKm} km)</span></div>`;
         }
       }
       
