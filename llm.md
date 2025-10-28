@@ -1,0 +1,415 @@
+# Historical Map URL Construction Instructions for LLMs
+
+**Service:** Historical Map Visualization  
+**Base URL:** `https://mitchell360.com/map-maker/`  
+**Last Updated:** 2025-10-28
+
+---
+
+## 🎯 CRITICAL: Foolproof Format (2025-10-28)
+
+Locations and labels are now **bound together** using the `~` (tilde) separator within a single parameter. This architecture makes it **impossible to create count mismatch errors**.
+
+**Key Rule:** Every location MUST be paired with its label using `~` before adding it to the URL.
+
+**Format:** `Location~Label` (bound together, then separate pairs with `|`)
+
+---
+
+## Service Overview
+
+This is a historical map visualization service that displays locations on ancient and modern maps using Leaflet.js. It supports two types of locations:
+
+- **Chronological locations** (blue markers) - Connected journey points with walking paths
+- **Reference locations** (red markers) - Standalone historical context points
+
+---
+
+## Base URL Structure
+
+```
+https://mitchell360.com/map-maker/?[parameters]
+```
+
+---
+
+## URL Parameters
+
+### 1. Chronological Locations (Blue Markers - Connected Journey)
+
+**Parameter Name:** `chronoLocationsAndLabels`
+
+**Structure:** Each location is bound to its label with `~`
+
+**Format:** `Location1~Label1|Location2~Label2|Location3~Label3`
+
+**Separators:**
+- `~` (tilde) = Binds location to its label (MANDATORY)
+- `|` (pipe) = Separates multiple location-label pairs
+- `%0A` = Newline within labels
+- `%0A%0A` = Blank line within labels
+
+**Location Format:** `City, Country` (e.g., `Rome, Italy` not just `Rome`)
+
+**Example:**
+```
+chronoLocationsAndLabels=Damascus,Syria~Damascus%0A32 AD|Antioch,Turkey~Antioch%0A47 AD|Rome,Italy~Rome%0A62 AD
+```
+
+---
+
+### 2. Reference Locations (Red Markers - Standalone)
+
+**Parameter Name:** `referenceLocationsAndLabels`
+
+**Structure:** Each location is bound to its label with `~`
+
+**Format:** `Location1~Label1|Location2~Label2`
+
+**Separators:** Same as chronological locations
+
+**Example:**
+```
+referenceLocationsAndLabels=Jerusalem,Israel~Jerusalem%0A33 AD: Jerusalem, Judea%0A2025 AD: Jerusalem, Israel%0A%0AThe Church's birthplace
+```
+
+---
+
+### 3. Map Title (Optional)
+
+**Parameter Name:** `title`
+
+**Purpose:** Displays a centered title at the top of the map (visible during loading and after map loads)
+
+**Format:** URL-encoded text string
+
+**Default:** If no title parameter is provided, displays `"Paul's Missionary Journeys"`
+
+**Visibility:** Title appears above the loading overlay and remains visible throughout the entire session
+
+**Example:**
+```
+title=Paul's%20Second%20Missionary%20Journey
+```
+
+**Note:** Spaces are encoded as `%20`, special characters should be URL-encoded
+
+---
+
+## Label Format: 5-Line Structure (Highly Recommended)
+
+For rich, professional popups, structure each label with 5 lines:
+
+1. **Line 1:** Location name only (becomes marker label and popup title)
+2. **Line 2:** Historical context → Format: `YEAR AD: AncientName, AncientRegion`
+3. **Line 3:** Modern context → Format: `YEAR AD: ModernName, ModernCountry`
+4. **Line 4:** Blank line → Use `%0A%0A` (two newlines)
+5. **Line 5+:** Detailed description (can be multiple lines)
+
+### Complete Label Example
+
+```
+Philippi~Philippi%0A49-50 AD: Philippi, Macedonia%0A2025 AD: Filippoi, Greece%0A%0APhilippi was the first European city where Paul established a Christian congregation during his second missionary journey.
+```
+
+**Breakdown:**
+- Location: `Philippi`
+- Line 1: `Philippi`
+- Line 2: `49-50 AD: Philippi, Macedonia`
+- Line 3: `2025 AD: Filippoi, Greece`
+- Line 4: `(blank line)`
+- Line 5: `Philippi was the first European city...`
+
+---
+
+## Step-by-Step Construction Process
+
+### Step 1: List Your Locations
+
+Write out each location you want to show. Use `City, Country` format for accurate geocoding.
+
+**Example List:**
+- Damascus, Syria
+- Antioch, Turkey
+- Philippi, Greece
+- Rome, Italy
+
+---
+
+### Step 2: Create Label for EACH Location
+
+**CRITICAL:** You must create a label for every single location using the 5-line format.
+
+**Example Labels:**
+```
+Damascus%0A32 AD: Damascus, Syria%0A2025 AD: Damascus, Syria%0A%0AConversion of Saul
+
+Antioch%0A47 AD: Antioch, Syria%0A2025 AD: Antakya, Turkey%0A%0AMission base
+
+Philippi%0A50 AD: Philippi, Macedonia%0A2025 AD: Filippoi, Greece%0A%0AFirst European church
+
+Rome%0A62 AD: Rome, Roman Empire%0A2025 AD: Rome, Italy%0A%0AHouse arrest ministry
+```
+
+---
+
+### Step 3: Bind Each Location to Its Label with ~
+
+**MANDATORY STEP:** Connect each location to its label using the tilde separator.
+
+**Binding Format:**
+```
+Damascus,Syria~Damascus%0A32 AD: Damascus, Syria%0A2025 AD: Damascus, Syria%0A%0AConversion of Saul
+
+Antioch,Turkey~Antioch%0A47 AD: Antioch, Syria%0A2025 AD: Antakya, Turkey%0A%0AMission base
+
+Philippi,Greece~Philippi%0A50 AD: Philippi, Macedonia%0A2025 AD: Filippoi, Greece%0A%0AFirst European church
+
+Rome,Italy~Rome%0A62 AD: Rome, Roman Empire%0A2025 AD: Rome, Italy%0A%0AHouse arrest ministry
+```
+
+---
+
+### Step 4: Join Pairs with | (Pipe)
+
+Connect all location~label pairs using the pipe character.
+
+**✅ CORRECT:**
+```
+Damascus,Syria~Damascus%0A32 AD|Antioch,Turkey~Antioch%0A47 AD|Philippi,Greece~Philippi%0A50 AD|Rome,Italy~Rome%0A62 AD
+```
+
+---
+
+### Step 5: Add Parameter Name and Build Final URL
+
+**✅ COMPLETE URL:**
+```
+https://mitchell360.com/map-maker/?chronoLocationsAndLabels=Damascus,Syria~Damascus%0A32 AD|Antioch,Turkey~Antioch%0A47 AD|Philippi,Greece~Philippi%0A50 AD|Rome,Italy~Rome%0A62 AD
+```
+
+---
+
+## ⚠️ Common Mistakes to AVOID
+
+### ❌ ERROR 1: Separate Arrays (Old Deprecated Format)
+
+**Problem:** Using separate parameters causes count mismatches
+
+```
+?chrono=Damascus,Syria|Antioch,Turkey|Philippi,Greece|Rome,Italy
+&chronoLabels=Damascus|Antioch|Philippi
+```
+
+**Why This Fails:** 4 locations but only 3 labels → mismatch error
+
+---
+
+### ❌ ERROR 2: Missing ~ Separator
+
+```
+?chronoLocationsAndLabels=Damascus,Syria|Antioch,Turkey|Rome,Italy
+```
+
+**Problem:** No labels provided, just locations
+
+---
+
+### ❌ ERROR 3: Wrong Separator
+
+```
+?chronoLocationsAndLabels=Damascus,Syria:Damascus|Antioch,Turkey:Antioch
+```
+
+**Problem:** Using `:` instead of `~`
+
+---
+
+### ✅ CORRECT: Bound Pairs with ~
+
+```
+?chronoLocationsAndLabels=Damascus,Syria~Damascus|Antioch,Turkey~Antioch|Rome,Italy~Rome
+```
+
+**Why This Works:** Each location is permanently bound to its label
+
+---
+
+## Pre-Construction Validation Checklist
+
+Before generating the URL, verify:
+
+- [ ] Every location is in `City, Country` format
+- [ ] Every location has a corresponding label created
+- [ ] Each location~label pair uses `~` (tilde) to bind them
+- [ ] Multiple pairs are separated by `|` (pipe)
+- [ ] Labels use `%0A` for newlines, not actual line breaks
+- [ ] Spaces in text use `%20` (automatic in most systems)
+- [ ] The parameter name is `chronoLocationsAndLabels` (not chrono)
+- [ ] URL starts with `https://mitchell360.com/map-maker/?`
+
+---
+
+## Complete Working Examples
+
+### Example 1: Simple 2-Location Journey
+
+```
+https://mitchell360.com/map-maker/?chronoLocationsAndLabels=Damascus,Syria~Damascus%0A32 AD|Antioch,Turkey~Antioch%0A47 AD
+```
+
+**Displays:** Two blue markers connected by a walking path
+
+---
+
+### Example 2: Rich 3-Location Journey with Full Labels
+
+```
+https://mitchell360.com/map-maker/?chronoLocationsAndLabels=Antioch,Turkey~Antioch%0A47-48 AD: Antioch, Syria%0A2025 AD: Antakya, Turkey%0A%0AAntioch served as Paul's primary mission base for ministry to the Gentiles and was where believers were first called Christians.|Philippi,Greece~Philippi%0A49-50 AD: Philippi, Macedonia%0A2025 AD: Filippoi, Greece%0A%0APhilippi was the first European city where Paul established a Christian congregation during his second missionary journey.|Rome,Italy~Rome%0A60-62 AD: Rome, Roman Empire%0A2025 AD: Rome, Italy%0A%0APaul was held under house arrest in Rome from approximately AD 60 to 62.
+```
+
+**Displays:** Three locations with rich historical context popups
+
+---
+
+### Example 3: Journey + Reference Location
+
+```
+https://mitchell360.com/map-maker/?chronoLocationsAndLabels=Antioch,Turkey~Antioch%0A47 AD|Rome,Italy~Rome%0A62 AD&referenceLocationsAndLabels=Jerusalem,Israel~Jerusalem%0A33 AD: Jerusalem, Judea%0A2025 AD: Jerusalem, Israel%0A%0AThe Church's birthplace and site of Pentecost
+```
+
+**Displays:** Two blue markers (connected) + one red marker (standalone reference)
+
+---
+
+### Example 4: Paul's Full Second Missionary Journey
+
+```
+https://mitchell360.com/map-maker/?chronoLocationsAndLabels=Antioch,Turkey~Antioch%0A49 AD|Derbe,Turkey~Derbe%0A49 AD|Lystra,Turkey~Lystra%0A49 AD|Iconium,Turkey~Iconium%0A49 AD|Philippi,Greece~Philippi%0A50 AD|Thessalonica,Greece~Thessalonica%0A50 AD|Berea,Greece~Berea%0A50 AD|Athens,Greece~Athens%0A51 AD|Corinth,Greece~Corinth%0A51-52 AD
+```
+
+**Displays:** Complete journey with 9 connected locations
+
+---
+
+## Encoding Reference
+
+| Character | Encoding | Purpose |
+|-----------|----------|---------|
+| `~` | Use as-is | CRITICAL separator that binds location to label |
+| `|` | Use as-is | Separates multiple location-label pairs |
+| Newline | `%0A` | Creates newline within labels |
+| Blank line | `%0A%0A` | Creates blank line within labels |
+| Space | `%20` | Space character (usually automatic) |
+| `&` | Use as-is | Separates different parameters |
+
+---
+
+## Placeholder Handling
+
+**If you don't have complete information:**
+
+- Use `Location~TBD` to explicitly mark incomplete data
+- The map will display a prominent "TBD" warning in the popup
+- Example: `Damascus,Syria~TBD` shows placeholder message
+
+**TBD Message Displayed:**
+```
+TBD
+TBD: Location information not provided
+2025 AD: Unknown
+
+Please provide complete location details.
+```
+
+---
+
+## Map Features
+
+### Base Maps
+- **Ancient World (DARE)** - Default historical map
+- **Modern Clean** - CartoDB Positron
+- **Modern Detailed** - OpenStreetMap
+
+### Overlays (Toggle in layer control)
+- **Country Borders** - Political boundaries
+- **Travel Line and Time** - Color-coded walking routes with travel time estimates
+
+### Interactions
+- Click/tap markers for detailed information
+- **Mobile (≤768px):** Bottom drawer slides up, swipe down to close
+- **Desktop:** Traditional popups
+- **Instructions:** "?" button opens this guide in new window
+
+---
+
+## Final Validation Steps
+
+Before providing URL to user, verify:
+
+- [ ] URL starts with `https://mitchell360.com/map-maker/?`
+- [ ] Every `~` has a location on left and label on right
+- [ ] All pairs are separated by `|`
+- [ ] No spaces in URL except encoded as `%20`
+- [ ] Labels use `%0A` for line breaks
+- [ ] URL is under 8000 characters
+
+---
+
+## Response Format to Users
+
+When providing URLs to users, include:
+
+1. **The complete working URL**
+2. **Brief description** (e.g., "This map shows Paul's second missionary journey with 6 locations")
+3. **Note about optional features** (e.g., "Toggle 'Travel Line and Time' overlay to see routes and estimated ancient travel times")
+
+---
+
+## Breaking Changes & Backward Compatibility
+
+### New Format (2025-10-28)
+- `chronoLocationsAndLabels` - Location and label bound together
+- `referenceLocationsAndLabels` - Location and label bound together
+
+### Deprecated Format (Still Supported)
+- `chrono` + `chronoLabels` - Separate arrays
+- `reference` + `referenceLabels` - Separate arrays
+
+**Status:** Old format still works but displays deprecation warning in browser console
+
+**Why Deprecated:** Separate arrays cause count mismatch errors that are impossible to debug
+
+**Migration Path:** Use new format where location and label are bound with `~`
+
+---
+
+## Tips for LLMs
+
+- ✅ **CRITICAL:** Always use `~` (tilde) to bind each location to its label
+- ✅ **MANDATORY:** Every location must have a label bound to it with `~`
+- ✅ Count mismatches are **impossible** with this format (location and label bound together)
+- ✅ Always specify country/region with city names (e.g., `Rome, Italy` not `Rome`)
+- ✅ Use rich 5-line label format for professional, information-rich popups
+- ✅ First line of each label becomes the marker name displayed on map
+- ✅ Lines 2-3 appear in gray as historical/modern context
+- ✅ Line 5+ becomes the main description text in popup
+- ✅ Use `%0A` for line breaks, `%0A%0A` for blank lines between sections
+- ✅ Chronological locations are connected by walking paths in the order specified
+- ✅ Reference locations are standalone and never connected to anything
+- ✅ Keep URLs under 8000 characters for maximum compatibility
+- ✅ Test your URL structure before providing to ensure all `~` separators are present
+
+---
+
+## Error Handling
+
+- Invalid locations skipped (geocoding failure logged to console)
+- Missing labels after `~` default to location name
+- Empty parameters are ignored
+- TBD labels display prominent placeholder warning
+- Count mismatches **IMPOSSIBLE** with new format (fundamental architecture improvement)
+
+---
+
+**Documentation Standard:** This file follows the `llm.md` web standard for providing instructions to Large Language Models.
