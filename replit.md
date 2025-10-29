@@ -17,6 +17,13 @@ An interactive map visualization tool built with Leaflet.js that displays histor
 - Markdown format is both LLM-friendly and human-readable when rendered on GitHub
 
 ## Recent Changes
+- 2025-10-28: **ADDED GEOCODING BEST PRACTICES SECTION** - Critical documentation to prevent location errors
+  - Added prominent "Geocoding Best Practices" section in llm.md after Service Overview
+  - Created table of common geocoding mistakes (e.g., Philadelphia,Turkey → Alasehir,Turkey)
+  - Documented pattern for handling ancient city names with modern geocoding
+  - Fixed Example 6 (Seven Churches) to use correct modern city names
+  - Updated Step 1 to emphasize using modern names for accurate geocoding
+  - Prevents ancient city names from plotting to wrong locations (e.g., Philadelphia, USA instead of Turkey)
 - 2025-10-28: **ENHANCED TITLE PARAMETER DOCUMENTATION** - Comprehensive llm.md updates
   - Added detailed `title` parameter documentation with use cases and styling details
   - Added 6 complete working examples demonstrating title parameter usage

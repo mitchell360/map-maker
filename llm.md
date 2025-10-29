@@ -25,6 +25,53 @@ This is a historical map visualization service that displays locations on ancien
 
 ---
 
+## 🚨 CRITICAL: Geocoding Best Practices
+
+The map uses OpenStreetMap's geocoding API, which works with **modern place names only**.
+
+### ✅ Always Use Modern City Names in the Location Field
+
+**Rule:** The location field (before the `~`) must use the modern city name that geocoding services recognize.
+
+**Why:** Ancient city names often match modern cities elsewhere, causing incorrect plotting.
+
+### Common Geocoding Mistakes
+
+| ❌ WRONG | ✅ CORRECT | Why |
+|----------|-----------|-----|
+| `Philadelphia,Turkey` | `Alasehir,Turkey` | "Philadelphia" geocodes to Pennsylvania, USA |
+| `Smyrna,Turkey` | `Izmir,Turkey` | "Smyrna" is the ancient name; modern city is İzmir |
+| `Antioch,Syria` | `Antakya,Turkey` | Antioch on the Orontes is now in Turkey, not Syria |
+| `Laodicea,Turkey` | `Denizli,Turkey` | Laodicea is ruins near modern Denizli |
+
+### How to Handle Ancient Names
+
+**Use this pattern:**
+```
+ModernCity,Country~AncientName%0AHistorical period: AncientName, AncientRegion%0A2025 AD: ModernName, ModernCountry
+```
+
+**Example:**
+```
+Alasehir,Turkey~Philadelphia%0ARevelation 3:7-13: Philadelphia, Asia Minor%0A2025 AD: Alaşehir, Türkiye%0A%0AThe faithful church
+```
+
+**Result:** 
+- Location geocodes correctly to Alaşehir, Turkey
+- Label displays "Philadelphia" as the marker name
+- Popup shows both ancient and modern context
+
+### Research Modern Names
+
+Before constructing URLs with ancient locations:
+
+1. **Search:** "ancient [CityName] modern name" (e.g., "ancient Philadelphia Turkey modern name")
+2. **Verify:** Cross-reference with Wikipedia or historical maps
+3. **Use:** The modern city name in the location field
+4. **Explain:** The ancient name in the label
+
+---
+
 ## Base URL Structure
 
 ```
@@ -137,15 +184,22 @@ Philippi~Philippi%0A49-50 AD: Philippi, Macedonia%0A2025 AD: Filippoi, Greece%0A
 
 ## Step-by-Step Construction Process
 
-### Step 1: List Your Locations
+### Step 1: List Your Locations with Modern Names
 
-Write out each location you want to show. Use `City, Country` format for accurate geocoding.
+Write out each location using **modern city names** for accurate geocoding. Use `City, Country` format.
 
-**Example List:**
+**🚨 CRITICAL:** Use modern names, not ancient names, to prevent geocoding errors.
+
+**Example List (Modern Names):**
 - Damascus, Syria
-- Antioch, Turkey
-- Philippi, Greece
+- Antakya, Turkey (not "Antioch, Syria")
+- Filippoi, Greece (Philippi)
 - Rome, Italy
+
+**For Ancient Cities:** Research the modern name first:
+- Ancient Philadelphia → Modern Alaşehir, Turkey
+- Ancient Smyrna → Modern İzmir, Turkey
+- Ancient Ephesus → Near Selçuk, Turkey
 
 ---
 
@@ -313,10 +367,12 @@ https://mitchell360.com/map-maker/?title=Paul's%20Second%20Missionary%20Journey&
 ### Example 6: The Seven Churches of Revelation
 
 ```
-https://mitchell360.com/map-maker/?title=The%20Seven%20Churches%20of%20Revelation&chronoLocationsAndLabels=Ephesus,Turkey~Ephesus%0ARevelation 2:1-7%0A%0AThe church that lost its first love|Smyrna,Turkey~Smyrna%0ARevelation 2:8-11%0A%0AThe suffering church|Pergamum,Turkey~Pergamum%0ARevelation 2:12-17%0A%0AWhere Satan's throne is|Thyatira,Turkey~Thyatira%0ARevelation 2:18-29%0A%0AThe compromising church|Sardis,Turkey~Sardis%0ARevelation 3:1-6%0A%0AThe dead church|Philadelphia,Turkey~Philadelphia%0ARevelation 3:7-13%0A%0AThe faithful church|Laodicea,Turkey~Laodicea%0ARevelation 3:14-22%0A%0AThe lukewarm church
+https://mitchell360.com/map-maker/?title=The%20Seven%20Churches%20of%20Revelation&chronoLocationsAndLabels=Selcuk,Turkey~Ephesus%0ARevelation 2:1-7: Ephesus, Asia Minor%0A2025 AD: Near Selçuk, Türkiye%0A%0AThe church that lost its first love|Izmir,Turkey~Smyrna%0ARevelation 2:8-11: Smyrna, Asia Minor%0A2025 AD: İzmir, Türkiye%0A%0AThe suffering church|Bergama,Turkey~Pergamum%0ARevelation 2:12-17: Pergamum, Asia Minor%0A2025 AD: Bergama, Türkiye%0A%0AWhere Satan's throne is|Akhisar,Turkey~Thyatira%0ARevelation 2:18-29: Thyatira, Asia Minor%0A2025 AD: Akhisar, Türkiye%0A%0AThe compromising church|Salihli,Turkey~Sardis%0ARevelation 3:1-6: Sardis, Asia Minor%0A2025 AD: Near Salihli, Türkiye%0A%0AThe dead church|Alasehir,Turkey~Philadelphia%0ARevelation 3:7-13: Philadelphia, Asia Minor%0A2025 AD: Alaşehir, Türkiye%0A%0AThe faithful church|Denizli,Turkey~Laodicea%0ARevelation 3:14-22: Laodicea, Asia Minor%0A2025 AD: Near Denizli, Türkiye%0A%0AThe lukewarm church
 ```
 
 **Displays:** Seven churches in order with connected path and descriptive title
+
+**⚠️ Important Note:** This example uses **modern city names** in the location field (e.g., `Alasehir,Turkey` not `Philadelphia,Turkey`) to ensure accurate geocoding. Ancient names are shown in the labels.
 
 ---
 
