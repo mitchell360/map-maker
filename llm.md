@@ -87,12 +87,25 @@ referenceLocationsAndLabels=Jerusalem,Israel~Jerusalem%0A33 AD: Jerusalem, Judea
 
 **Visibility:** Title appears above the loading overlay and remains visible throughout the entire session
 
-**Example:**
+**Style:** Elegant serif font, centered, positioned at z-index 3100 (above loading overlay)
+
+**When to Use:**
+- To customize the map for specific topics (e.g., "Key Locations in Galatians")
+- To identify different missionary journeys (e.g., "Paul's Third Missionary Journey")
+- To create themed maps (e.g., "Churches of Revelation" or "Journey to Rome")
+
+**Examples:**
 ```
 title=Paul's%20Second%20Missionary%20Journey
+title=Key%20Locations%20in%20Galatians
+title=Journey%20to%20Rome
+title=The%20Seven%20Churches%20of%20Revelation
 ```
 
-**Note:** Spaces are encoded as `%20`, special characters should be URL-encoded
+**Encoding Tips:**
+- Spaces → `%20` (e.g., "First Journey" becomes `First%20Journey`)
+- Apostrophes → `%27` (e.g., "Paul's" becomes `Paul%27s`)
+- Special characters should be URL-encoded for maximum compatibility
 
 ---
 
@@ -183,10 +196,17 @@ Damascus,Syria~Damascus%0A32 AD|Antioch,Turkey~Antioch%0A47 AD|Philippi,Greece~P
 
 ### Step 5: Add Parameter Name and Build Final URL
 
-**✅ COMPLETE URL:**
+**Option A: Without Custom Title (uses default "Paul's Missionary Journeys"):**
 ```
 https://mitchell360.com/map-maker/?chronoLocationsAndLabels=Damascus,Syria~Damascus%0A32 AD|Antioch,Turkey~Antioch%0A47 AD|Philippi,Greece~Philippi%0A50 AD|Rome,Italy~Rome%0A62 AD
 ```
+
+**Option B: With Custom Title (recommended for specific topics):**
+```
+https://mitchell360.com/map-maker/?title=Paul's%20Early%20Ministry&chronoLocationsAndLabels=Damascus,Syria~Damascus%0A32 AD|Antioch,Turkey~Antioch%0A47 AD|Philippi,Greece~Philippi%0A50 AD|Rome,Italy~Rome%0A62 AD
+```
+
+**💡 Tip:** Always add a descriptive title when creating maps for specific topics (e.g., "Key Locations in Galatians", "Journey to Rome", "The Seven Churches")
 
 ---
 
@@ -233,6 +253,7 @@ Before generating the URL, verify:
 - [ ] Labels use `%0A` for newlines, not actual line breaks
 - [ ] Spaces in text use `%20` (automatic in most systems)
 - [ ] The parameter name is `chronoLocationsAndLabels` for journey locations
+- [ ] Optional: Include `title` parameter for custom map title
 - [ ] URL starts with `https://mitchell360.com/map-maker/?`
 
 ---
@@ -245,11 +266,21 @@ Before generating the URL, verify:
 https://mitchell360.com/map-maker/?chronoLocationsAndLabels=Damascus,Syria~Damascus%0A32 AD|Antioch,Turkey~Antioch%0A47 AD
 ```
 
-**Displays:** Two blue markers connected by a walking path
+**Displays:** Two blue markers connected by a walking path (default title: "Paul's Missionary Journeys")
 
 ---
 
-### Example 2: Rich 3-Location Journey with Full Labels
+### Example 2: Journey with Custom Title
+
+```
+https://mitchell360.com/map-maker/?title=Paul's%20Conversion%20and%20Early%20Ministry&chronoLocationsAndLabels=Damascus,Syria~Damascus%0A32 AD: Damascus, Syria%0A2025 AD: Damascus, Syria%0A%0ASaul's conversion and calling (Acts 9)|Antioch,Turkey~Antioch%0A47 AD: Antioch, Syria%0A2025 AD: Antakya, Turkey%0A%0AFirst mission base
+```
+
+**Displays:** Two locations with custom title "Paul's Conversion and Early Ministry" displayed at top
+
+---
+
+### Example 3: Rich 3-Location Journey with Full Labels
 
 ```
 https://mitchell360.com/map-maker/?chronoLocationsAndLabels=Antioch,Turkey~Antioch%0A47-48 AD: Antioch, Syria%0A2025 AD: Antakya, Turkey%0A%0AAntioch served as Paul's primary mission base for ministry to the Gentiles and was where believers were first called Christians.|Philippi,Greece~Philippi%0A49-50 AD: Philippi, Macedonia%0A2025 AD: Filippoi, Greece%0A%0APhilippi was the first European city where Paul established a Christian congregation during his second missionary journey.|Rome,Italy~Rome%0A60-62 AD: Rome, Roman Empire%0A2025 AD: Rome, Italy%0A%0APaul was held under house arrest in Rome from approximately AD 60 to 62.
@@ -259,23 +290,33 @@ https://mitchell360.com/map-maker/?chronoLocationsAndLabels=Antioch,Turkey~Antio
 
 ---
 
-### Example 3: Journey + Reference Location
+### Example 4: Journey + Reference Location with Title
 
 ```
-https://mitchell360.com/map-maker/?chronoLocationsAndLabels=Antioch,Turkey~Antioch%0A47 AD|Rome,Italy~Rome%0A62 AD&referenceLocationsAndLabels=Jerusalem,Israel~Jerusalem%0A33 AD: Jerusalem, Judea%0A2025 AD: Jerusalem, Israel%0A%0AThe Church's birthplace and site of Pentecost
+https://mitchell360.com/map-maker/?title=Key%20Locations%20in%20Galatians&chronoLocationsAndLabels=Antioch,Turkey~Antioch%0A47 AD|Rome,Italy~Rome%0A62 AD&referenceLocationsAndLabels=Jerusalem,Israel~Jerusalem%0A33 AD: Jerusalem, Judea%0A2025 AD: Jerusalem, Israel%0A%0AThe Church's birthplace and site of Pentecost
 ```
 
-**Displays:** Two blue markers (connected) + one red marker (standalone reference)
+**Displays:** Two blue markers (connected) + one red marker (standalone reference) with title "Key Locations in Galatians"
 
 ---
 
-### Example 4: Paul's Full Second Missionary Journey
+### Example 5: Paul's Full Second Missionary Journey
 
 ```
-https://mitchell360.com/map-maker/?chronoLocationsAndLabels=Antioch,Turkey~Antioch%0A49 AD|Derbe,Turkey~Derbe%0A49 AD|Lystra,Turkey~Lystra%0A49 AD|Iconium,Turkey~Iconium%0A49 AD|Philippi,Greece~Philippi%0A50 AD|Thessalonica,Greece~Thessalonica%0A50 AD|Berea,Greece~Berea%0A50 AD|Athens,Greece~Athens%0A51 AD|Corinth,Greece~Corinth%0A51-52 AD
+https://mitchell360.com/map-maker/?title=Paul's%20Second%20Missionary%20Journey&chronoLocationsAndLabels=Antioch,Turkey~Antioch%0A49 AD|Derbe,Turkey~Derbe%0A49 AD|Lystra,Turkey~Lystra%0A49 AD|Iconium,Turkey~Iconium%0A49 AD|Philippi,Greece~Philippi%0A50 AD|Thessalonica,Greece~Thessalonica%0A50 AD|Berea,Greece~Berea%0A50 AD|Athens,Greece~Athens%0A51 AD|Corinth,Greece~Corinth%0A51-52 AD
 ```
 
-**Displays:** Complete journey with 9 connected locations
+**Displays:** Complete journey with 9 connected locations and custom title
+
+---
+
+### Example 6: The Seven Churches of Revelation
+
+```
+https://mitchell360.com/map-maker/?title=The%20Seven%20Churches%20of%20Revelation&chronoLocationsAndLabels=Ephesus,Turkey~Ephesus%0ARevelation 2:1-7%0A%0AThe church that lost its first love|Smyrna,Turkey~Smyrna%0ARevelation 2:8-11%0A%0AThe suffering church|Pergamum,Turkey~Pergamum%0ARevelation 2:12-17%0A%0AWhere Satan's throne is|Thyatira,Turkey~Thyatira%0ARevelation 2:18-29%0A%0AThe compromising church|Sardis,Turkey~Sardis%0ARevelation 3:1-6%0A%0AThe dead church|Philadelphia,Turkey~Philadelphia%0ARevelation 3:7-13%0A%0AThe faithful church|Laodicea,Turkey~Laodicea%0ARevelation 3:14-22%0A%0AThe lukewarm church
+```
+
+**Displays:** Seven churches in order with connected path and descriptive title
 
 ---
 
@@ -287,8 +328,14 @@ https://mitchell360.com/map-maker/?chronoLocationsAndLabels=Antioch,Turkey~Antio
 | `|` | Use as-is | Separates multiple location-label pairs |
 | Newline | `%0A` | Creates newline within labels |
 | Blank line | `%0A%0A` | Creates blank line within labels |
-| Space | `%20` | Space character (usually automatic) |
-| `&` | Use as-is | Separates different parameters |
+| Space | `%20` | Space character (usually automatic, used in title and labels) |
+| Apostrophe | `%27` | Apostrophe in title (e.g., "Paul's" → `Paul%27s`) |
+| `&` | Use as-is | Separates different parameters (e.g., `?title=...&chronoLocationsAndLabels=...`) |
+
+**Title Parameter Encoding Examples:**
+- `"Paul's Second Journey"` → `title=Paul%27s%20Second%20Journey`
+- `"Key Locations in Galatians"` → `title=Key%20Locations%20in%20Galatians`
+- `"The Seven Churches"` → `title=The%20Seven%20Churches`
 
 ---
 

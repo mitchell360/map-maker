@@ -17,6 +17,12 @@ An interactive map visualization tool built with Leaflet.js that displays histor
 - Markdown format is both LLM-friendly and human-readable when rendered on GitHub
 
 ## Recent Changes
+- 2025-10-28: **ENHANCED TITLE PARAMETER DOCUMENTATION** - Comprehensive llm.md updates
+  - Added detailed `title` parameter documentation with use cases and styling details
+  - Added 6 complete working examples demonstrating title parameter usage
+  - Updated step-by-step construction process to include optional title parameter
+  - Added title encoding examples to encoding reference table
+  - Examples include: "Key Locations in Galatians", "The Seven Churches of Revelation", and more
 - 2025-10-28: **REMOVED BACKWARD COMPATIBILITY** - Simplified codebase by removing legacy parameter support
   - Removed all backward compatibility code for old `chrono`/`chronoLabels` parameter format
   - Only supports current `chronoLocationsAndLabels` and `referenceLocationsAndLabels` parameters
