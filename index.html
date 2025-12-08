@@ -259,15 +259,22 @@ function hideLoading(){
   const osm=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'});
   const baseLayers={'Ancient World':dare,'Modern (Clean)':positron,'Modern (Detailed)':osm};
   
-  // Add title if provided, or use default for test data
+  // Check if ANY URL parameters exist (excluding cache-buster)
+  const urlParamsRaw=new URLSearchParams(window.location.search);
+  urlParamsRaw.delete('_cb');
+  const hasAnyParams=urlParamsRaw.toString().length>0;
+  
+  // Add title - only use default when NO URL parameters at all
   const titleParam=qs('title');
   const defaultTitle="Sample: Paul's Missionary Journeys";
-  const displayTitle=titleParam||defaultTitle;
+  const displayTitle=hasAnyParams?(titleParam||''):defaultTitle;
   
-  const titleDiv=document.createElement('div');
-  titleDiv.className='map-title';
-  titleDiv.textContent=displayTitle;
-  document.body.appendChild(titleDiv);
+  if(displayTitle){
+    const titleDiv=document.createElement('div');
+    titleDiv.className='map-title';
+    titleDiv.textContent=displayTitle;
+    document.body.appendChild(titleDiv);
+  }
   
   // Custom marker icons
   const blueIcon=L.icon({iconUrl:'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',shadowUrl:'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',iconSize:[25,41],iconAnchor:[12,41],popupAnchor:[1,-34],shadowSize:[41,41]});
@@ -329,13 +336,13 @@ function hideLoading(){
   const chronoParam=qs('chronoLocationsAndLabels');
   const refParam=qs('referenceLocationsAndLabels');
   
-  // Parse chronological locations (blue markers, connected journey)
-  const chronoData=parseLocationsAndLabels(chronoParam||defaultChronoData);
+  // Parse chronological locations - only use defaults when NO URL params at all
+  const chronoData=parseLocationsAndLabels(hasAnyParams?chronoParam:defaultChronoData);
   const chronoPoints=chronoData.locations;
   const chronoLabels=chronoData.labels;
   
-  // Parse reference locations (red markers, standalone)
-  const refData=parseLocationsAndLabels(refParam||defaultRefData);
+  // Parse reference locations - only use defaults when NO URL params at all
+  const refData=parseLocationsAndLabels(hasAnyParams?refParam:defaultRefData);
   const refPoints=refData.locations;
   const refLabels=refData.labels;
 
