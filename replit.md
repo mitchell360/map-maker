@@ -17,6 +17,20 @@ An interactive map visualization tool built with Leaflet.js that displays histor
 - Markdown format is both LLM-friendly and human-readable when rendered on GitHub
 
 ## Recent Changes
+- 2025-12-08: **FIXED GEOCODING ISSUES IN LLM.MD** - Major documentation update to prevent incorrect marker placement
+  - **Problem identified:** Three locations in Example 6 (Seven Churches) geocoded incorrectly
+  - **Root cause:** OpenStreetMap Nominatim returns province/region centers instead of city centers for major cities
+  - **Fixes applied:**
+    - `Selcuk,Turkey` → `Selcuk,Izmir,Turkey` (was geocoding to wrong village in Afyonkarahisar)
+    - `Izmir,Turkey` → `Konak,Izmir,Turkey` (was geocoding 20km south of city center)
+    - `Denizli,Turkey` → `Pamukkale,Turkey` (was geocoding 10km from Laodicea ruins)
+  - Updated Geocoding Best Practices table with expanded examples
+  - Added "Province vs City Center Problem" warning section
+  - Added "Coordinate Override" documentation for `@lat,lon` fallback syntax
+  - Updated Example 6 with corrected location queries and detailed notes
+- 2025-12-08: **CONFIGURED STATIC DEPLOYMENT** - Changed deployment type from server to static
+  - Deployment now serves files directly without requiring server.py
+  - Pure static site works identically in Replit and GitHub Pages
 - 2025-12-08: **ENHANCED README.md** - Added comprehensive GitHub-facing documentation
   - Added project overview, features list, quick example URL
   - Included URL format reference and link to llm.md for LLM instructions

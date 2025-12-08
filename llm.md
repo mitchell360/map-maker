@@ -2,7 +2,7 @@
 
 **Service:** Historical Map Visualization  
 **Base URL:** `https://mitchell360.com/map-maker/`  
-**Last Updated:** 2025-10-28
+**Last Updated:** 2025-12-08
 
 ---
 
@@ -55,6 +55,24 @@ The map uses OpenStreetMap's geocoding API, which works with **modern place name
 - `Izmir,Turkey` → `Konak,Izmir,Turkey` (city center, not province)
 - `Selcuk,Turkey` → `Selcuk,Izmir,Turkey` (correct town, not wrong village)
 - `Denizli,Turkey` → `Pamukkale,Turkey` (near Laodicea ruins)
+
+### 📍 Coordinate Override (Fallback)
+
+If geocoding fails or returns wrong results, you can specify exact coordinates using the `@lat,lon` syntax:
+
+**Format:** `LocationName@latitude,longitude~Label`
+
+**Example:**
+```
+Ephesus@37.9404,27.3393~Ephesus%0ARevelation 2:1-7%0A%0AThe church that lost its first love
+```
+
+**When to use:**
+- Geocoding returns completely wrong location
+- Ancient site has no modern town nearby
+- Need precise placement on archaeological site
+
+**Finding coordinates:** Search "ancient [SiteName] coordinates" or use Google Maps
 
 ### How to Handle Ancient Names
 
@@ -379,12 +397,15 @@ https://mitchell360.com/map-maker/?title=Paul's%20Second%20Missionary%20Journey&
 ### Example 6: The Seven Churches of Revelation
 
 ```
-https://mitchell360.com/map-maker/?title=The%20Seven%20Churches%20of%20Revelation&chronoLocationsAndLabels=Selcuk,Turkey~Ephesus%0ARevelation 2:1-7: Ephesus, Asia Minor%0A2025 AD: Near Selçuk, Türkiye%0A%0AThe church that lost its first love|Izmir,Turkey~Smyrna%0ARevelation 2:8-11: Smyrna, Asia Minor%0A2025 AD: İzmir, Türkiye%0A%0AThe suffering church|Bergama,Turkey~Pergamum%0ARevelation 2:12-17: Pergamum, Asia Minor%0A2025 AD: Bergama, Türkiye%0A%0AWhere Satan's throne is|Akhisar,Turkey~Thyatira%0ARevelation 2:18-29: Thyatira, Asia Minor%0A2025 AD: Akhisar, Türkiye%0A%0AThe compromising church|Salihli,Turkey~Sardis%0ARevelation 3:1-6: Sardis, Asia Minor%0A2025 AD: Near Salihli, Türkiye%0A%0AThe dead church|Alasehir,Turkey~Philadelphia%0ARevelation 3:7-13: Philadelphia, Asia Minor%0A2025 AD: Alaşehir, Türkiye%0A%0AThe faithful church|Denizli,Turkey~Laodicea%0ARevelation 3:14-22: Laodicea, Asia Minor%0A2025 AD: Near Denizli, Türkiye%0A%0AThe lukewarm church
+https://mitchell360.com/map-maker/?title=The%20Seven%20Churches%20of%20Revelation&chronoLocationsAndLabels=Selcuk,Izmir,Turkey~Ephesus%0ARevelation 2:1-7: Ephesus, Asia Minor%0A2025 AD: Near Selçuk, Türkiye%0A%0AThe church that lost its first love|Konak,Izmir,Turkey~Smyrna%0ARevelation 2:8-11: Smyrna, Asia Minor%0A2025 AD: İzmir, Türkiye%0A%0AThe suffering church|Bergama,Turkey~Pergamum%0ARevelation 2:12-17: Pergamum, Asia Minor%0A2025 AD: Bergama, Türkiye%0A%0AWhere Satan's throne is|Akhisar,Turkey~Thyatira%0ARevelation 2:18-29: Thyatira, Asia Minor%0A2025 AD: Akhisar, Türkiye%0A%0AThe compromising church|Salihli,Turkey~Sardis%0ARevelation 3:1-6: Sardis, Asia Minor%0A2025 AD: Near Salihli, Türkiye%0A%0AThe dead church|Alasehir,Turkey~Philadelphia%0ARevelation 3:7-13: Philadelphia, Asia Minor%0A2025 AD: Alaşehir, Türkiye%0A%0AThe faithful church|Pamukkale,Turkey~Laodicea%0ARevelation 3:14-22: Laodicea, Asia Minor%0A2025 AD: Near Pamukkale, Türkiye%0A%0AThe lukewarm church
 ```
 
 **Displays:** Seven churches in order with connected path and descriptive title
 
-**⚠️ Important Note:** This example uses **modern city names** in the location field (e.g., `Alasehir,Turkey` not `Philadelphia,Turkey`) to ensure accurate geocoding. Ancient names are shown in the labels.
+**⚠️ Important Note:** This example uses **precise modern location names** to ensure accurate geocoding:
+- `Selcuk,Izmir,Turkey` (not just "Selcuk,Turkey" which geocodes to wrong village)
+- `Konak,Izmir,Turkey` (not just "Izmir,Turkey" which geocodes to province center)
+- `Pamukkale,Turkey` (not "Denizli,Turkey" which geocodes 10km from Laodicea ruins)
 
 ---
 
