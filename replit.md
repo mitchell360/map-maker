@@ -17,7 +17,8 @@ The tool uses a hybrid architecture with a static frontend and a Flask backend f
 - **Responsive Drawer Interface:** Markers open a detailed information drawer, which acts as a bottom sheet on mobile (with swipe gestures and pull handle) and a centered modal on desktop. This unified UX eliminates mobile detection complexity.
 - **Permanent Labels:** Location names are displayed directly above markers (blue for chronological, red for reference).
 - **Travel Line and Time Overlay:** Displays color-coded travel paths (purple gradient for accessibility), numbered circular badges along paths, and a travel time information box with legend.
-- **Transport Mode Selector:** 4 historical travel speed options: Walking (4 km/h), Ox cart (2 km/h), Pack animal (4.5 km/h), Horse courier (6 km/h). Selector appears when Travel Line overlay is enabled and dynamically recalculates travel times.
+- **Route Type Selector:** "Land Only" (routes around water) vs "Use Water" (detects Mediterranean crossings, calculates sailing at 4 knots/7.4 km/h). When Use Water is enabled, shows land vs. sea breakdown with anchor icons for water segments.
+- **Transport Mode Selector:** 4 historical land travel speed options: Walking (4 km/h), Ox cart (2 km/h), Pack animal (4.5 km/h), Horse courier (6 km/h). Selector appears when Travel Line overlay is enabled and dynamically recalculates travel times.
 - **Toggleable Overlays:** Includes Country Borders and Roman Roads (16,554 road segments from itiner-e dataset).
 - **Map Title:** Optional `title` URL parameter displays a centered title above the map.
 - **Loading Progress Overlay:** A full-screen indicator with spinner shows real-time status during map initialization, geocoding, and route calculation.

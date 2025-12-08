@@ -125,6 +125,15 @@
     .transport-btn:hover{border-color:#0369a1;background:#f0f9ff}
     .transport-btn.active{background:#0369a1;color:#fff;border-color:#0369a1}
     .transport-btn .speed{font-size:10px;opacity:0.8}
+    
+    /* Route mode selector (Land Only / Use Water) */
+    .route-mode-inline{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px;padding-top:8px;border-top:1px solid #e5e7eb}
+    .route-mode-inline-title{width:100%;font-size:11px;color:#6b7280;margin-bottom:2px}
+    .route-btn{padding:4px 10px;font-size:11px;border:1px solid #d1d5db;border-radius:4px;background:#fff;cursor:pointer;transition:all 0.15s;white-space:nowrap}
+    .route-btn:hover{border-color:#0891b2;background:#ecfeff}
+    .route-btn.active{background:#0891b2;color:#fff;border-color:#0891b2}
+    .route-btn .icon{margin-right:4px}
+    .water-breakdown{margin-top:6px;padding:6px 8px;background:#f0fdfa;border-radius:4px;font-size:11px;color:#0f766e}
   </style>
 </head>
 <body>
@@ -684,7 +693,55 @@ function hideLoading(){
     if(totalDistance>0){
       // Transport speeds in km/h (from itiner-e research)
       const transportSpeeds={walking:4,pack:4.5,horse:6,oxcart:2};
+      const SAILING_SPEED_KMH=7.4; // 4 knots in km/h
       let currentTransport='walking';
+      let currentRouteMode='land'; // 'land' or 'water'
+      
+      // Mediterranean bounding box for water crossing detection
+      const WATER_BOUNDS={minLat:30,maxLat:46,minLon:-6,maxLon:36};
+      
+      // Calculate straight-line distance between two points (accepts {lat,lon} objects)
+      function haversineDistance(start,end){
+        const R=6371e3;
+        const lat1=start.lat*Math.PI/180,lat2=end.lat*Math.PI/180;
+        const dLat=(end.lat-start.lat)*Math.PI/180;
+        const dLon=(end.lon-start.lon)*Math.PI/180;
+        const a=Math.sin(dLat/2)**2+Math.cos(lat1)*Math.cos(lat2)*Math.sin(dLon/2)**2;
+        const c=2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+        return R*c;
+      }
+      
+      // Check if a path segment likely crosses water (Mediterranean)
+      function isWaterCrossing(start,end,routeDist){
+        const straightDist=haversineDistance(start,end);
+        
+        // Check if midpoint is within Mediterranean basin
+        const midLat=(start.lat+end.lat)/2;
+        const midLon=(start.lon+end.lon)/2;
+        if(midLat<WATER_BOUNDS.minLat||midLat>WATER_BOUNDS.maxLat)return false;
+        if(midLon<WATER_BOUNDS.minLon||midLon>WATER_BOUNDS.maxLon)return false;
+        
+        // Must be at least 50km to consider water crossing
+        if(straightDist<50000)return false;
+        
+        // Key heuristic: If route distance is very close to straight-line distance (ratio < 1.15),
+        // OSRM likely returned a straight line because it couldn't find a land route (water crossing)
+        // Normal road routes are 1.2-1.5x the straight-line distance due to road curvature
+        const ratio=routeDist>0?(routeDist/straightDist):1.0;
+        return ratio<1.15;
+      }
+      
+      // Analyze each leg for water crossings
+      const legWaterInfo=[];
+      for(let i=0;i<chronoCoords.length-1;i++){
+        const start=chronoCoords[i];
+        const end=chronoCoords[i+1];
+        const routeDist=legDistances[i]||0;
+        const straightDist=haversineDistance(start,end);
+        const isWater=isWaterCrossing(start,end,routeDist);
+        
+        legWaterInfo.push({isWater,straightDist,routeDist:routeDist||straightDist});
+      }
       
       // Calculate travel time based on distance and transport mode
       const formatTime=(distanceMeters,speedKmH)=>{
@@ -706,41 +763,107 @@ function hideLoading(){
       travelTimeDiv.style.display='none';
       document.body.appendChild(travelTimeDiv);
       
-      // Update travel time display based on current transport mode
+      // Update travel time display based on current transport mode and route mode
       function updateTravelTimeDisplay(){
-        const speed=transportSpeeds[currentTransport];
-        const totalTime=formatTime(totalDistance,speed);
+        const landSpeed=transportSpeeds[currentTransport];
         
-        // Build legs display
-        let legsHtml='';
-        for(let i=0;i<legDistances.length;i++){
-          if(legDistances[i]>0){
-            const legTime=formatTime(legDistances[i],speed);
-            const segmentNum=i+1;
-            const segmentLabel=`<span style="display:inline-block;width:18px;height:18px;background:#ffffff;border-radius:50%;text-align:center;line-height:18px;font-size:10px;font-weight:700;border:2px solid ${legColors[i]};margin-right:8px;vertical-align:middle;">${segmentNum}</span>`;
-            legsHtml+=`<div>${segmentLabel}${chronoNames[i]} → ${chronoNames[i+1]}: <span style="color:#6b7280;">${legTime.timeStr} (${legTime.distKm} km)</span></div>`;
+        // Calculate totals based on route mode
+        let totalLandDist=0,totalWaterDist=0,totalLandHours=0,totalWaterHours=0;
+        const legDetails=[];
+        
+        for(let i=0;i<legWaterInfo.length;i++){
+          const info=legWaterInfo[i];
+          const legDist=info.routeDist||info.straightDist;
+          
+          if(currentRouteMode==='water'&&info.isWater){
+            // Use sailing for water crossings
+            const waterDist=info.straightDist;
+            totalWaterDist+=waterDist;
+            totalWaterHours+=waterDist/1000/SAILING_SPEED_KMH;
+            legDetails.push({type:'water',dist:waterDist,speed:SAILING_SPEED_KMH,name:`${chronoNames[i]} → ${chronoNames[i+1]}`});
+          }else{
+            // Land travel
+            totalLandDist+=legDist;
+            totalLandHours+=legDist/1000/landSpeed;
+            legDetails.push({type:'land',dist:legDist,speed:landSpeed,name:`${chronoNames[i]} → ${chronoNames[i+1]}`});
           }
+        }
+        
+        const hoursPerDay=8;
+        const totalHours=totalLandHours+totalWaterHours;
+        const totalDays=Math.ceil(totalHours/hoursPerDay);
+        const totalDistKm=((totalLandDist+totalWaterDist)/1000).toFixed(0);
+        const weeks=Math.floor(totalDays/7);
+        const days=totalDays%7;
+        let totalTimeStr='';
+        if(weeks>0)totalTimeStr+=`${weeks} week${weeks>1?'s':''} `;
+        if(days>0||weeks===0)totalTimeStr+=`${days} day${days!==1?'s':''}`;
+        
+        // Build legs display with type indicators
+        let legsHtml='';
+        for(let i=0;i<legDetails.length;i++){
+          const leg=legDetails[i];
+          const distKm=(leg.dist/1000).toFixed(0);
+          const legHours=leg.dist/1000/leg.speed;
+          const legDays=Math.ceil(legHours/hoursPerDay);
+          const lWeeks=Math.floor(legDays/7);
+          const lDays=legDays%7;
+          let legTimeStr='';
+          if(lWeeks>0)legTimeStr+=`${lWeeks}w `;
+          if(lDays>0||lWeeks===0)legTimeStr+=`${lDays}d`;
+          
+          const segmentNum=i+1;
+          const typeIcon=leg.type==='water'?'<span style="color:#0891b2" title="Sea route">⚓</span>':'';
+          const segmentLabel=`<span style="display:inline-block;width:18px;height:18px;background:#ffffff;border-radius:50%;text-align:center;line-height:18px;font-size:10px;font-weight:700;border:2px solid ${legColors[i]||'#6b7280'};margin-right:8px;vertical-align:middle;">${segmentNum}</span>`;
+          legsHtml+=`<div>${segmentLabel}${typeIcon}${leg.name}: <span style="color:#6b7280;">${legTimeStr} (${distKm} km)</span></div>`;
         }
         
         const modeLabels={walking:'Walking',pack:'Pack Animal',horse:'Horse Courier',oxcart:'Ox Cart'};
         const modeSpeeds={walking:'4',pack:'4.5',horse:'6',oxcart:'2'};
         
+        // Build route mode selector (Land Only / Use Water)
+        let routeModeHtml='<div class="route-mode-inline"><div class="route-mode-inline-title">Route Type:</div>';
+        routeModeHtml+=`<button class="route-btn ${currentRouteMode==='land'?'active':''}" data-route="land"><span class="icon">🚶</span>Land Only</button>`;
+        routeModeHtml+=`<button class="route-btn ${currentRouteMode==='water'?'active':''}" data-route="water"><span class="icon">⛵</span>Use Water</button>`;
+        routeModeHtml+='</div>';
+        
         // Build inline transport mode selector
-        let transportHtml='<div class="transport-inline"><div class="transport-inline-title">Transport Mode:</div>';
+        let transportHtml='<div class="transport-inline"><div class="transport-inline-title">Land Transport:</div>';
         for(const [mode,label] of Object.entries(modeLabels)){
           const isActive=mode===currentTransport?'active':'';
           transportHtml+=`<button class="transport-btn ${isActive}" data-mode="${mode}">${label} <span class="speed">(${modeSpeeds[mode]} km/h)</span></button>`;
         }
         transportHtml+='</div>';
         
+        // Water breakdown info
+        let waterBreakdownHtml='';
+        if(currentRouteMode==='water'&&totalWaterDist>0){
+          const waterKm=(totalWaterDist/1000).toFixed(0);
+          const landKm=(totalLandDist/1000).toFixed(0);
+          const waterDays=Math.ceil(totalWaterHours/hoursPerDay);
+          const landDays=Math.ceil(totalLandHours/hoursPerDay);
+          waterBreakdownHtml=`<div class="water-breakdown">⚓ Sea: ${waterKm} km (${waterDays}d @ 4 knots) | 🚶 Land: ${landKm} km (${landDays}d)</div>`;
+        }
+        
+        const headerLabel=currentRouteMode==='water'?`${modeLabels[currentTransport]} + Sailing`:`${modeLabels[currentTransport]}`;
+        
         travelTimeDiv.innerHTML=`
           <div class="distance-info-header">
-            <div><strong>Travel Time (${modeLabels[currentTransport]}):</strong> ${totalTime.timeStr} <span style="font-size:12px;color:#6b7280">(${totalTime.distKm} km)</span></div>
+            <div><strong>Travel Time (${headerLabel}):</strong> ${totalTimeStr.trim()} <span style="font-size:12px;color:#6b7280">(${totalDistKm} km)</span></div>
             <button class="distance-info-toggle" onclick="this.parentElement.nextElementSibling.classList.toggle('expanded');this.textContent=this.textContent==='▼'?'▲':'▼'">▼</button>
           </div>
-          <div class="distance-info-details">${legsHtml}</div>
+          <div class="distance-info-details">${legsHtml}${waterBreakdownHtml}</div>
+          ${routeModeHtml}
           ${transportHtml}
         `;
+        
+        // Attach click handlers to route mode buttons
+        travelTimeDiv.querySelectorAll('.route-btn').forEach(btn=>{
+          btn.addEventListener('click',function(){
+            currentRouteMode=this.dataset.route;
+            updateTravelTimeDisplay();
+          });
+        });
         
         // Attach click handlers to transport buttons
         travelTimeDiv.querySelectorAll('.transport-btn').forEach(btn=>{

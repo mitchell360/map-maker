@@ -3,7 +3,7 @@
 **Service:** Historical Map Visualization  
 **Base URL:** `https://mitchell360.com/map-maker/`  
 **Last Updated:** 2025-12-08  
-**Version:** 2.2 (Maritime Overlays + Transport Modes)
+**Version:** 2.3 (Water Routing + Maritime Overlays)
 
 ---
 
@@ -462,14 +462,24 @@ Please provide complete location details.
 - **Sea Lanes (itiner-e)** - Ancient sea lanes and river routes (1,358 water routes, dashed cyan for sea, solid blue for rivers)
 - **Sailing Routes (Mendeley)** - Research-based ancient Mediterranean shipping network (58 ports, 257 documented routes)
 
+### Route Type Selector
+When "Travel Line and Time" overlay is enabled, you can choose how the journey handles water crossings:
+- **Land Only** - Routes go around bodies of water (uses OSRM road routing)
+- **Use Water** - Routes can cross sea via sailing (detects Mediterranean crossings, calculates at 4 knots/7.4 km/h)
+
+When "Use Water" is selected:
+- Sea crossings are detected automatically based on path geometry
+- Water segments show an anchor icon (⚓) in the leg breakdown
+- A summary shows land vs. sea distance and time breakdown
+
 ### Transport Mode Selector
-When "Travel Line and Time" overlay is enabled, a dropdown selector appears allowing you to choose historical travel speeds:
+Choose historical land travel speeds (applies to land portions):
 - **Walking** - 4 km/h (default) - Standard foot travel
 - **Ox cart** - 2 km/h - Slow freight transport
 - **Pack animal** - 4.5 km/h - Mule or donkey caravan
 - **Horse courier** - 6 km/h - Fast mounted messenger
 
-The travel times displayed on the map dynamically recalculate when you change the transport mode.
+The travel times displayed on the map dynamically recalculate when you change the transport mode or route type.
 
 ### Interactions
 - Click/tap markers for detailed information
