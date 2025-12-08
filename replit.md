@@ -47,5 +47,5 @@ The tool uses a hybrid architecture with a static frontend and a Flask backend f
 - **Routing API:** OSRM (routing.openstreetmap.de) for walking route calculations
 - **Country Boundary Data:** Natural Earth GeoJSON (downloaded locally)
 - **Roman Roads Data:** itiner-e dataset (downloaded locally as `roman_roads.ndjson`)
-- **Sailing Data:** (downloaded locally as `sailing_data.json`)
+- **Sailing Routes Data:** Mendeley ancient Mediterranean shipping network (downloaded locally as `sailing_routes.json`, 58 ports, 257 routes)
 - **Screenshot API (Replit only):** Playwright with system Chromium from Nix.

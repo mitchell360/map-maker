@@ -3,7 +3,7 @@
 **Service:** Historical Map Visualization  
 **Base URL:** `https://mitchell360.com/map-maker/`  
 **Last Updated:** 2025-12-08  
-**Version:** 2.1 (Roman Roads + Transport Modes)
+**Version:** 2.2 (Maritime Overlays + Transport Modes)
 
 ---
 
@@ -458,7 +458,9 @@ Please provide complete location details.
 ### Overlays (Toggle in layer control)
 - **Country Borders** - Political boundaries
 - **Travel Line and Time** - Color-coded routes with travel time estimates
-- **Roman Roads** - Historical Roman road network from itiner-e dataset (16,554 road segments)
+- **Roman Roads** - Historical Roman road network (land routes only, ~15,200 segments from itiner-e)
+- **Sea Lanes (itiner-e)** - Ancient sea lanes and river routes (1,358 water routes, dashed cyan for sea, solid blue for rivers)
+- **Sailing Routes (Mendeley)** - Research-based ancient Mediterranean shipping network (58 ports, 257 documented routes)
 
 ### Transport Mode Selector
 When "Travel Line and Time" overlay is enabled, a dropdown selector appears allowing you to choose historical travel speeds:
