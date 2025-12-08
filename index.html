@@ -283,9 +283,11 @@ function hideLoading(){
   // Create overlay layers
   const countryBorders=L.layerGroup();
   const travelLineAndTime=L.layerGroup();
+  const romanRoads=L.layerGroup();
   
   // Add invisible placeholder so layer shows in control
   travelLineAndTime.addLayer(L.circle([0,0],{radius:1,opacity:0}));
+  romanRoads.addLayer(L.circle([0,0],{radius:1,opacity:0}));
   
   // Load country borders
   fetch('https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_110m_admin_0_countries.geojson')
@@ -302,9 +304,79 @@ function hideLoading(){
     })
     .catch(e=>console.error('Border load error:',e));
   
+  // Load Roman roads from itiner-e (ndjson format)
+  let romanRoadsLoaded=false;
+  function loadRomanRoads(){
+    if(romanRoadsLoaded)return;
+    romanRoadsLoaded=true;
+    
+    fetch('https://itiner-e.org/route-segments/download')
+      .then(r=>r.text())
+      .then(text=>{
+        const lines=text.trim().split('\n');
+        const features=[];
+        for(const line of lines){
+          try{
+            const feature=JSON.parse(line);
+            features.push(feature);
+          }catch(e){}
+        }
+        
+        // Style roads by type and certainty
+        function getRoadStyle(props){
+          const isMain=props.type==='Main Road';
+          const certainty=props.segmentCertainty||'Conjectured';
+          
+          let color='#8B4513'; // Default brown for roman roads
+          let weight=isMain?2.5:1.5;
+          let opacity=0.8;
+          let dashArray=null;
+          
+          if(certainty==='Certain'){
+            color=isMain?'#8B4513':'#A0522D'; // Darker brown for certain roads
+            opacity=0.9;
+          }else if(certainty==='Conjectured'){
+            color=isMain?'#CD853F':'#D2691E'; // Lighter brown for conjectured
+            opacity=0.7;
+          }else if(certainty==='Hypothetical'){
+            color='#DEB887';
+            opacity=0.5;
+            dashArray='4,4';
+          }
+          
+          return{color,weight,opacity,dashArray};
+        }
+        
+        // Create GeoJSON layer
+        const roadsLayer=L.geoJSON({type:'FeatureCollection',features},{
+          style:f=>getRoadStyle(f.properties),
+          onEachFeature:(f,layer)=>{
+            const props=f.properties;
+            const name=props.name||'Roman Road';
+            const type=props.type||'Road';
+            const certainty=props.segmentCertainty||'Unknown';
+            const length=(props._lengthInKm||0).toFixed(2);
+            const period=props.constructionPeriod||'Unknown period';
+            layer.bindPopup(`<b>${name}</b><br>Type: ${type}<br>Certainty: ${certainty}<br>Length: ${length} km<br>Period: ${period}`);
+          }
+        });
+        
+        romanRoads.clearLayers();
+        romanRoads.addLayer(roadsLayer);
+        console.log(`Loaded ${features.length} Roman road segments`);
+      })
+      .catch(e=>console.error('Roman roads load error:',e));
+  }
+  
+  // Load roads when overlay is added
+  map.on('overlayadd',function(e){
+    if(e.name==='Roman Roads (itiner-e)')loadRomanRoads();
+  });
+  
   // Overlays are OFF by default but available in layer control
   const overlays={
     'Country Borders':countryBorders,
+    'Roman Roads (itiner-e)':romanRoads,
     'Travel Line and Time':travelLineAndTime
   };
   L.control.layers(baseLayers,overlays,{collapsed:true}).addTo(map);
