@@ -118,17 +118,13 @@
     .loading-detail{font-size:14px;color:#6b7280}
     
     /* Transport mode selector */
-    .transport-selector{position:absolute;top:120px;right:12px;z-index:400;background:#fff;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.2);padding:8px;font-family:system-ui,-apple-system,sans-serif;font-size:12px;display:none}
-    .transport-selector.visible{display:block}
-    .transport-selector-title{font-weight:600;color:#374151;margin-bottom:6px;font-size:11px;text-transform:uppercase;letter-spacing:0.5px}
-    .transport-option{display:flex;align-items:center;padding:6px 8px;cursor:pointer;border-radius:4px;transition:background 0.15s}
-    .transport-option:hover{background:#f3f4f6}
-    .transport-option.selected{background:#eff6ff;color:#1d4ed8}
-    .transport-option input{margin-right:8px}
-    .transport-speed{color:#6b7280;font-size:11px;margin-left:auto}
-    @media (max-width: 768px) {
-      .transport-selector{top:auto;bottom:80px;right:12px;left:12px;max-width:none}
-    }
+    /* Transport selector - inline in travel time box */
+    .transport-inline{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px;padding-top:8px;border-top:1px solid #e5e7eb}
+    .transport-inline-title{width:100%;font-size:11px;color:#6b7280;margin-bottom:2px}
+    .transport-btn{padding:4px 8px;font-size:11px;border:1px solid #d1d5db;border-radius:4px;background:#fff;cursor:pointer;transition:all 0.15s;white-space:nowrap}
+    .transport-btn:hover{border-color:#0369a1;background:#f0f9ff}
+    .transport-btn.active{background:#0369a1;color:#fff;border-color:#0369a1}
+    .transport-btn .speed{font-size:10px;opacity:0.8}
   </style>
 </head>
 <body>
@@ -153,26 +149,6 @@
   <a href="https://mitchell360.com/map-maker/llm.md" target="_blank" title="Instructions for using this Map Maker">?</a>
 </div>
 
-<!-- Transport mode selector (shown when Travel Line enabled) -->
-<div class="transport-selector" id="transportSelector">
-  <div class="transport-selector-title">Transport Mode</div>
-  <label class="transport-option selected" data-speed="4">
-    <input type="radio" name="transport" value="walking" checked>
-    Walking <span class="transport-speed">4 km/h</span>
-  </label>
-  <label class="transport-option" data-speed="4.5">
-    <input type="radio" name="transport" value="pack">
-    Pack Animal <span class="transport-speed">4.5 km/h</span>
-  </label>
-  <label class="transport-option" data-speed="6">
-    <input type="radio" name="transport" value="horse">
-    Horse Courier <span class="transport-speed">6 km/h</span>
-  </label>
-  <label class="transport-option" data-speed="2">
-    <input type="radio" name="transport" value="oxcart">
-    Ox Cart <span class="transport-speed">2 km/h</span>
-  </label>
-</div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
   integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
@@ -318,10 +294,12 @@ function hideLoading(){
   const countryBorders=L.layerGroup();
   const travelLineAndTime=L.layerGroup();
   const romanRoads=L.layerGroup();
+  const seaLanes=L.layerGroup();
   
   // Add invisible placeholder so layer shows in control
   travelLineAndTime.addLayer(L.circle([0,0],{radius:1,opacity:0}));
   romanRoads.addLayer(L.circle([0,0],{radius:1,opacity:0}));
+  seaLanes.addLayer(L.circle([0,0],{radius:1,opacity:0}));
   
   // Load country borders from local file
   fetch('country_borders.geojson')
@@ -340,11 +318,12 @@ function hideLoading(){
   
   // Load Roman roads from local file (downloaded from itiner-e.org)
   let romanRoadsLoaded=false;
-  function loadRomanRoads(){
-    if(romanRoadsLoaded)return;
-    romanRoadsLoaded=true;
-    
-    fetch('roman_roads.ndjson')
+  let seaLanesLoaded=false;
+  let roadDataCache=null;
+  
+  function fetchRoadData(){
+    if(roadDataCache)return Promise.resolve(roadDataCache);
+    return fetch('roman_roads.ndjson')
       .then(r=>r.text())
       .then(text=>{
         const lines=text.trim().split('\n');
@@ -355,6 +334,18 @@ function hideLoading(){
             features.push(feature);
           }catch(e){}
         }
+        roadDataCache=features;
+        return features;
+      });
+  }
+  
+  function loadRomanRoads(){
+    if(romanRoadsLoaded)return;
+    romanRoadsLoaded=true;
+    
+    fetchRoadData().then(features=>{
+        // Filter out Sea Lanes - only show land roads
+        const landRoads=features.filter(f=>f.properties&&f.properties.type!=='Sea Lane'&&f.properties.type!=='River');
         
         // Style roads by type and certainty
         function getRoadStyle(props){
@@ -381,8 +372,8 @@ function hideLoading(){
           return{color,weight,opacity,dashArray};
         }
         
-        // Create GeoJSON layer
-        const roadsLayer=L.geoJSON({type:'FeatureCollection',features},{
+        // Create GeoJSON layer for land roads only
+        const roadsLayer=L.geoJSON({type:'FeatureCollection',features:landRoads},{
           style:f=>getRoadStyle(f.properties),
           onEachFeature:(f,layer)=>{
             const props=f.properties;
@@ -397,20 +388,58 @@ function hideLoading(){
         
         romanRoads.clearLayers();
         romanRoads.addLayer(roadsLayer);
-        console.log(`Loaded ${features.length} Roman road segments`);
+        console.log(`Loaded ${landRoads.length} Roman road segments (land only)`);
       })
       .catch(e=>console.error('Roman roads load error:',e));
   }
   
-  // Load roads when overlay is added
+  // Load sea lanes/sailing routes
+  function loadSeaLanes(){
+    if(seaLanesLoaded)return;
+    seaLanesLoaded=true;
+    
+    fetchRoadData().then(features=>{
+        // Filter to Sea Lanes and Rivers only
+        const waterRoutes=features.filter(f=>f.properties&&(f.properties.type==='Sea Lane'||f.properties.type==='River'));
+        
+        // Create GeoJSON layer for sea routes with distinct styling
+        const seaLayer=L.geoJSON({type:'FeatureCollection',features:waterRoutes},{
+          style:f=>{
+            const isRiver=f.properties.type==='River';
+            return{
+              color:isRiver?'#2563eb':'#0ea5e9', // Blue for rivers, cyan for sea lanes
+              weight:isRiver?2:2.5,
+              opacity:0.7,
+              dashArray:isRiver?null:'6,4' // Dashed for sea lanes
+            };
+          },
+          onEachFeature:(f,layer)=>{
+            const props=f.properties;
+            const name=props.name||'Sea Route';
+            const type=props.type||'Route';
+            const length=(props._lengthInKm||0).toFixed(2);
+            layer.bindPopup(`<b>${name}</b><br>Type: ${type}<br>Length: ${length} km`);
+          }
+        });
+        
+        seaLanes.clearLayers();
+        seaLanes.addLayer(seaLayer);
+        console.log(`Loaded ${waterRoutes.length} sea lanes and river routes`);
+      })
+      .catch(e=>console.error('Sea lanes load error:',e));
+  }
+  
+  // Load layers when overlay is added
   map.on('overlayadd',function(e){
     if(e.layer===romanRoads)loadRomanRoads();
+    if(e.layer===seaLanes)loadSeaLanes();
   });
   
   // Overlays are OFF by default but available in layer control
   const overlays={
     'Country Borders':countryBorders,
-    'Roman Roads (itiner-e)':romanRoads,
+    'Roman Roads':romanRoads,
+    'Sea Lanes & Rivers':seaLanes,
     'Travel Line and Time':travelLineAndTime
   };
   L.control.layers(baseLayers,overlays,{collapsed:true}).addTo(map);
@@ -621,8 +650,6 @@ function hideLoading(){
       travelTimeDiv.style.display='none';
       document.body.appendChild(travelTimeDiv);
       
-      const transportSelector=document.getElementById('transportSelector');
-      
       // Update travel time display based on current transport mode
       function updateTravelTimeDisplay(){
         const speed=transportSpeeds[currentTransport];
@@ -640,40 +667,46 @@ function hideLoading(){
         }
         
         const modeLabels={walking:'Walking',pack:'Pack Animal',horse:'Horse Courier',oxcart:'Ox Cart'};
+        const modeSpeeds={walking:'4',pack:'4.5',horse:'6',oxcart:'2'};
+        
+        // Build inline transport mode selector
+        let transportHtml='<div class="transport-inline"><div class="transport-inline-title">Transport Mode:</div>';
+        for(const [mode,label] of Object.entries(modeLabels)){
+          const isActive=mode===currentTransport?'active':'';
+          transportHtml+=`<button class="transport-btn ${isActive}" data-mode="${mode}">${label} <span class="speed">(${modeSpeeds[mode]} km/h)</span></button>`;
+        }
+        transportHtml+='</div>';
+        
         travelTimeDiv.innerHTML=`
           <div class="distance-info-header">
             <div><strong>Travel Time (${modeLabels[currentTransport]}):</strong> ${totalTime.timeStr} <span style="font-size:12px;color:#6b7280">(${totalTime.distKm} km)</span></div>
             <button class="distance-info-toggle" onclick="this.parentElement.nextElementSibling.classList.toggle('expanded');this.textContent=this.textContent==='▼'?'▲':'▼'">▼</button>
           </div>
           <div class="distance-info-details">${legsHtml}</div>
+          ${transportHtml}
         `;
+        
+        // Attach click handlers to transport buttons
+        travelTimeDiv.querySelectorAll('.transport-btn').forEach(btn=>{
+          btn.addEventListener('click',function(){
+            currentTransport=this.dataset.mode;
+            updateTravelTimeDisplay();
+          });
+        });
       }
       
       // Initial display
       updateTravelTimeDisplay();
       
-      // Handle transport mode selection
-      transportSelector.querySelectorAll('.transport-option').forEach(opt=>{
-        opt.addEventListener('click',function(){
-          transportSelector.querySelectorAll('.transport-option').forEach(o=>o.classList.remove('selected'));
-          this.classList.add('selected');
-          currentTransport=this.querySelector('input').value;
-          this.querySelector('input').checked=true;
-          updateTravelTimeDisplay();
-        });
-      });
-      
-      // Show/hide travel time display and transport selector based on layer toggle
+      // Show/hide travel time display based on layer toggle
       map.on('overlayadd',function(e){
         if(e.layer===travelLineAndTime){
           travelTimeDiv.style.display='block';
-          transportSelector.classList.add('visible');
         }
       });
       map.on('overlayremove',function(e){
         if(e.layer===travelLineAndTime){
           travelTimeDiv.style.display='none';
-          transportSelector.classList.remove('visible');
         }
       });
     }
