@@ -160,7 +160,7 @@ referenceLocationsAndLabels=Jerusalem,Israel~Jerusalem%0A33 AD: Jerusalem, Judea
 
 **Format:** URL-encoded text string
 
-**Default:** If no title parameter is provided, displays `"Paul's Missionary Journeys"`
+**Default:** If no title parameter is provided, displays `"Sample: Paul's Missionary Journeys"` to indicate sample data
 
 **Visibility:** Title appears above the loading overlay and remains visible throughout the entire session
 
@@ -280,7 +280,7 @@ Damascus,Syria~Damascus%0A32 AD|Antioch,Turkey~Antioch%0A47 AD|Philippi,Greece~P
 
 ### Step 5: Add Parameter Name and Build Final URL
 
-**Option A: Without Custom Title (uses default "Paul's Missionary Journeys"):**
+**Option A: Without Custom Title (uses default "Sample: Paul's Missionary Journeys"):**
 ```
 https://mitchell360.com/map-maker/?chronoLocationsAndLabels=Damascus,Syria~Damascus%0A32 AD|Antioch,Turkey~Antioch%0A47 AD|Philippi,Greece~Philippi%0A50 AD|Rome,Italy~Rome%0A62 AD
 ```
@@ -350,7 +350,7 @@ Before generating the URL, verify:
 https://mitchell360.com/map-maker/?chronoLocationsAndLabels=Damascus,Syria~Damascus%0A32 AD|Antioch,Turkey~Antioch%0A47 AD
 ```
 
-**Displays:** Two blue markers connected by a walking path (default title: "Paul's Missionary Journeys")
+**Displays:** Two blue markers connected by a walking path (default title: "Sample: Paul's Missionary Journeys")
 
 ---
 
