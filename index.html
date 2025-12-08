@@ -295,11 +295,13 @@ function hideLoading(){
   const travelLineAndTime=L.layerGroup();
   const romanRoads=L.layerGroup();
   const seaLanes=L.layerGroup();
+  const sailingRoutes=L.layerGroup();
   
   // Add invisible placeholder so layer shows in control
   travelLineAndTime.addLayer(L.circle([0,0],{radius:1,opacity:0}));
   romanRoads.addLayer(L.circle([0,0],{radius:1,opacity:0}));
   seaLanes.addLayer(L.circle([0,0],{radius:1,opacity:0}));
+  sailingRoutes.addLayer(L.circle([0,0],{radius:1,opacity:0}));
   
   // Load country borders from local file
   fetch('country_borders.geojson')
@@ -429,17 +431,71 @@ function hideLoading(){
       .catch(e=>console.error('Sea lanes load error:',e));
   }
   
+  // Load Mendeley sailing routes from JSON (ancient Mediterranean shipping network)
+  let sailingRoutesLoaded=false;
+  function loadSailingRoutes(){
+    if(sailingRoutesLoaded)return;
+    sailingRoutesLoaded=true;
+    
+    fetch('sailing_routes.json')
+      .then(r=>r.json())
+      .then(data=>{
+        const ports=data.ports;
+        const routes=data.routes;
+        
+        // Create port markers (small circles)
+        const portMarkers=[];
+        for(const [name,info] of Object.entries(ports)){
+          const marker=L.circleMarker([info.lat,info.lon],{
+            radius:5,
+            fillColor:'#0ea5e9',
+            color:'#0369a1',
+            weight:2,
+            opacity:1,
+            fillOpacity:0.8
+          });
+          marker.bindPopup(`<b>${name}</b><br><span style="color:#6b7280">${info.modern}</span><br><span style="font-size:11px">Ancient Mediterranean Port</span>`);
+          portMarkers.push(marker);
+        }
+        
+        // Create route lines
+        const routeLines=[];
+        for(const route of routes){
+          const fromPort=ports[route.from];
+          const toPort=ports[route.to];
+          if(fromPort&&toPort){
+            const line=L.polyline([[fromPort.lat,fromPort.lon],[toPort.lat,toPort.lon]],{
+              color:'#0ea5e9',
+              weight:1.5,
+              opacity:0.5,
+              dashArray:'4,6'
+            });
+            line.bindPopup(`<b>${route.from} ↔ ${route.to}</b><br><span style="font-size:11px;color:#6b7280">Ancient sailing route (Mendeley research data)</span>`);
+            routeLines.push(line);
+          }
+        }
+        
+        sailingRoutes.clearLayers();
+        routeLines.forEach(l=>sailingRoutes.addLayer(l));
+        portMarkers.forEach(m=>sailingRoutes.addLayer(m));
+        console.log(`Loaded ${Object.keys(ports).length} ancient ports and ${routes.length} sailing routes`);
+      })
+      .catch(e=>console.error('Sailing routes load error:',e));
+  }
+  
   // Load layers when overlay is added
   map.on('overlayadd',function(e){
     if(e.layer===romanRoads)loadRomanRoads();
     if(e.layer===seaLanes)loadSeaLanes();
+    if(e.layer===sailingRoutes)loadSailingRoutes();
   });
   
   // Overlays are OFF by default but available in layer control
   const overlays={
     'Country Borders':countryBorders,
     'Roman Roads':romanRoads,
-    'Sea Lanes & Rivers':seaLanes,
+    'Sea Lanes (itiner-e)':seaLanes,
+    'Sailing Routes (Mendeley)':sailingRoutes,
     'Travel Line and Time':travelLineAndTime
   };
   L.control.layers(baseLayers,overlays,{collapsed:true}).addTo(map);
