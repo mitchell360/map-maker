@@ -116,6 +116,19 @@
     @keyframes spin{to{transform:rotate(360deg)}}
     .loading-text{font-size:18px;color:#374151;font-weight:500;margin-bottom:8px}
     .loading-detail{font-size:14px;color:#6b7280}
+    
+    /* Transport mode selector */
+    .transport-selector{position:absolute;top:120px;right:12px;z-index:400;background:#fff;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.2);padding:8px;font-family:system-ui,-apple-system,sans-serif;font-size:12px;display:none}
+    .transport-selector.visible{display:block}
+    .transport-selector-title{font-weight:600;color:#374151;margin-bottom:6px;font-size:11px;text-transform:uppercase;letter-spacing:0.5px}
+    .transport-option{display:flex;align-items:center;padding:6px 8px;cursor:pointer;border-radius:4px;transition:background 0.15s}
+    .transport-option:hover{background:#f3f4f6}
+    .transport-option.selected{background:#eff6ff;color:#1d4ed8}
+    .transport-option input{margin-right:8px}
+    .transport-speed{color:#6b7280;font-size:11px;margin-left:auto}
+    @media (max-width: 768px) {
+      .transport-selector{top:auto;bottom:80px;right:12px;left:12px;max-width:none}
+    }
   </style>
 </head>
 <body>
@@ -138,6 +151,27 @@
 <!-- Instructions link - always shows as ? button -->
 <div class="instructions-link">
   <a href="https://mitchell360.com/map-maker/llm.md" target="_blank" title="Instructions for using this Map Maker">?</a>
+</div>
+
+<!-- Transport mode selector (shown when Travel Line enabled) -->
+<div class="transport-selector" id="transportSelector">
+  <div class="transport-selector-title">Transport Mode</div>
+  <label class="transport-option selected" data-speed="4">
+    <input type="radio" name="transport" value="walking" checked>
+    Walking <span class="transport-speed">4 km/h</span>
+  </label>
+  <label class="transport-option" data-speed="4.5">
+    <input type="radio" name="transport" value="pack">
+    Pack Animal <span class="transport-speed">4.5 km/h</span>
+  </label>
+  <label class="transport-option" data-speed="6">
+    <input type="radio" name="transport" value="horse">
+    Horse Courier <span class="transport-speed">6 km/h</span>
+  </label>
+  <label class="transport-option" data-speed="2">
+    <input type="radio" name="transport" value="oxcart">
+    Ox Cart <span class="transport-speed">2 km/h</span>
+  </label>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
@@ -289,8 +323,8 @@ function hideLoading(){
   travelLineAndTime.addLayer(L.circle([0,0],{radius:1,opacity:0}));
   romanRoads.addLayer(L.circle([0,0],{radius:1,opacity:0}));
   
-  // Load country borders
-  fetch('https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_110m_admin_0_countries.geojson')
+  // Load country borders from local file
+  fetch('country_borders.geojson')
     .then(r=>r.json())
     .then(data=>{
       L.geoJSON(data,{
@@ -304,13 +338,13 @@ function hideLoading(){
     })
     .catch(e=>console.error('Border load error:',e));
   
-  // Load Roman roads from itiner-e (ndjson format)
+  // Load Roman roads from local file (downloaded from itiner-e.org)
   let romanRoadsLoaded=false;
   function loadRomanRoads(){
     if(romanRoadsLoaded)return;
     romanRoadsLoaded=true;
     
-    fetch('https://itiner-e.org/route-segments/download')
+    fetch('roman_roads.ndjson')
       .then(r=>r.text())
       .then(text=>{
         const lines=text.trim().split('\n');
@@ -370,7 +404,7 @@ function hideLoading(){
   
   // Load roads when overlay is added
   map.on('overlayadd',function(e){
-    if(e.name==='Roman Roads (itiner-e)')loadRomanRoads();
+    if(e.layer===romanRoads)loadRomanRoads();
   });
   
   // Overlays are OFF by default but available in layer control
@@ -561,55 +595,86 @@ function hideLoading(){
     const g=new L.featureGroup(allMarkers);
     map.fitBounds(g.getBounds().pad(0.18));
     
-    // Create travel time display
+    // Create travel time display with transport mode support
     if(totalDistance>0){
-      const formatTime=(distanceMeters)=>{
+      // Transport speeds in km/h (from itiner-e research)
+      const transportSpeeds={walking:4,pack:4.5,horse:6,oxcart:2};
+      let currentTransport='walking';
+      
+      // Calculate travel time based on distance and transport mode
+      const formatTime=(distanceMeters,speedKmH)=>{
         const distKm=distanceMeters/1000;
-        const walkingDist=distKm*0.6;
-        const boatDist=distKm*0.4;
-        const walkingDays=walkingDist/25;
-        const boatDays=boatDist/100;
-        const totalDays=Math.ceil(walkingDays+boatDays);
+        const hoursPerDay=8; // Assume 8 hours of travel per day
+        const totalHours=distKm/speedKmH;
+        const totalDays=Math.ceil(totalHours/hoursPerDay);
         const weeks=Math.floor(totalDays/7);
         const days=totalDays%7;
         let timeStr='';
         if(weeks>0)timeStr+=`${weeks} week${weeks>1?'s':''} `;
         if(days>0||weeks===0)timeStr+=`${days} day${days!==1?'s':''}`;
-        return {timeStr:timeStr.trim(),distKm:distKm.toFixed(0),totalDays};
+        return {timeStr:timeStr.trim(),distKm:distKm.toFixed(0),totalDays,totalHours:Math.round(totalHours)};
       };
-      
-      // Build legs display with segment numbers (no color squares)
-      let legsHtml='';
-      for(let i=0;i<legDistances.length;i++){
-        if(legDistances[i]>0){
-          const legTime=formatTime(legDistances[i]);
-          const segmentNum=i+1;
-          const segmentLabel=`<span style="display:inline-block;width:18px;height:18px;background:#ffffff;border-radius:50%;text-align:center;line-height:18px;font-size:10px;font-weight:700;border:2px solid ${legColors[i]};margin-right:8px;vertical-align:middle;">${segmentNum}</span>`;
-          legsHtml+=`<div>${segmentLabel}${chronoNames[i]} → ${chronoNames[i+1]}: <span style="color:#6b7280;">${legTime.timeStr} (${legTime.distKm} km)</span></div>`;
-        }
-      }
-      
-      const totalTime=formatTime(totalDistance);
       
       // Create travel time display element (hidden by default)
       const travelTimeDiv=document.createElement('div');
       travelTimeDiv.className='distance-info';
       travelTimeDiv.style.display='none';
-      travelTimeDiv.innerHTML=`
-        <div class="distance-info-header">
-          <div><strong>Estimated Travel Time:</strong> ${totalTime.timeStr} <span style="font-size:12px;color:#6b7280">(${totalTime.distKm} km)</span></div>
-          <button class="distance-info-toggle" onclick="this.parentElement.nextElementSibling.classList.toggle('expanded');this.textContent=this.textContent==='▼'?'▲':'▼'">▼</button>
-        </div>
-        <div class="distance-info-details">${legsHtml}</div>
-      `;
       document.body.appendChild(travelTimeDiv);
       
-      // Show/hide travel time display based on layer toggle
+      const transportSelector=document.getElementById('transportSelector');
+      
+      // Update travel time display based on current transport mode
+      function updateTravelTimeDisplay(){
+        const speed=transportSpeeds[currentTransport];
+        const totalTime=formatTime(totalDistance,speed);
+        
+        // Build legs display
+        let legsHtml='';
+        for(let i=0;i<legDistances.length;i++){
+          if(legDistances[i]>0){
+            const legTime=formatTime(legDistances[i],speed);
+            const segmentNum=i+1;
+            const segmentLabel=`<span style="display:inline-block;width:18px;height:18px;background:#ffffff;border-radius:50%;text-align:center;line-height:18px;font-size:10px;font-weight:700;border:2px solid ${legColors[i]};margin-right:8px;vertical-align:middle;">${segmentNum}</span>`;
+            legsHtml+=`<div>${segmentLabel}${chronoNames[i]} → ${chronoNames[i+1]}: <span style="color:#6b7280;">${legTime.timeStr} (${legTime.distKm} km)</span></div>`;
+          }
+        }
+        
+        const modeLabels={walking:'Walking',pack:'Pack Animal',horse:'Horse Courier',oxcart:'Ox Cart'};
+        travelTimeDiv.innerHTML=`
+          <div class="distance-info-header">
+            <div><strong>Travel Time (${modeLabels[currentTransport]}):</strong> ${totalTime.timeStr} <span style="font-size:12px;color:#6b7280">(${totalTime.distKm} km)</span></div>
+            <button class="distance-info-toggle" onclick="this.parentElement.nextElementSibling.classList.toggle('expanded');this.textContent=this.textContent==='▼'?'▲':'▼'">▼</button>
+          </div>
+          <div class="distance-info-details">${legsHtml}</div>
+        `;
+      }
+      
+      // Initial display
+      updateTravelTimeDisplay();
+      
+      // Handle transport mode selection
+      transportSelector.querySelectorAll('.transport-option').forEach(opt=>{
+        opt.addEventListener('click',function(){
+          transportSelector.querySelectorAll('.transport-option').forEach(o=>o.classList.remove('selected'));
+          this.classList.add('selected');
+          currentTransport=this.querySelector('input').value;
+          this.querySelector('input').checked=true;
+          updateTravelTimeDisplay();
+        });
+      });
+      
+      // Show/hide travel time display and transport selector based on layer toggle
       map.on('overlayadd',function(e){
-        if(e.name==='Travel Line and Time')travelTimeDiv.style.display='block';
+        if(e.layer===travelLineAndTime){
+          travelTimeDiv.style.display='block';
+          transportSelector.classList.add('visible');
+        }
       });
       map.on('overlayremove',function(e){
-        if(e.name==='Travel Line and Time')travelTimeDiv.style.display='none';
+        if(e.layer===travelLineAndTime){
+          travelTimeDiv.style.display='none';
+          transportSelector.classList.remove('visible');
+        }
       });
     }
   }else{map.setView([37.8,20],5);}
