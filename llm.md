@@ -2,7 +2,8 @@
 
 **Service:** Historical Map Visualization  
 **Base URL:** `https://mitchell360.com/map-maker/`  
-**Last Updated:** 2025-12-08
+**Last Updated:** 2025-12-08  
+**Version:** 2.1 (Roman Roads + Transport Modes)
 
 ---
 
@@ -456,7 +457,17 @@ Please provide complete location details.
 
 ### Overlays (Toggle in layer control)
 - **Country Borders** - Political boundaries
-- **Travel Line and Time** - Color-coded walking routes with travel time estimates
+- **Travel Line and Time** - Color-coded routes with travel time estimates
+- **Roman Roads** - Historical Roman road network from itiner-e dataset (16,554 road segments)
+
+### Transport Mode Selector
+When "Travel Line and Time" overlay is enabled, a dropdown selector appears allowing you to choose historical travel speeds:
+- **Walking** - 4 km/h (default) - Standard foot travel
+- **Ox cart** - 2 km/h - Slow freight transport
+- **Pack animal** - 4.5 km/h - Mule or donkey caravan
+- **Horse courier** - 6 km/h - Fast mounted messenger
+
+The travel times displayed on the map dynamically recalculate when you change the transport mode.
 
 ### Interactions
 - Click/tap markers for detailed information
