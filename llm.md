@@ -40,9 +40,21 @@ The map uses OpenStreetMap's geocoding API, which works with **modern place name
 | ❌ WRONG | ✅ CORRECT | Why |
 |----------|-----------|-----|
 | `Philadelphia,Turkey` | `Alasehir,Turkey` | "Philadelphia" geocodes to Pennsylvania, USA |
-| `Smyrna,Turkey` | `Izmir,Turkey` | "Smyrna" is the ancient name; modern city is İzmir |
+| `Smyrna,Turkey` | `Konak,Izmir,Turkey` | "Smyrna" is ancient; "Izmir" alone returns province center 20km south |
+| `Izmir,Turkey` | `Konak,Izmir,Turkey` | Major cities geocode to province center, not city center |
 | `Antioch,Syria` | `Antakya,Turkey` | Antioch on the Orontes is now in Turkey, not Syria |
-| `Laodicea,Turkey` | `Denizli,Turkey` | Laodicea is ruins near modern Denizli |
+| `Laodicea,Turkey` | `Pamukkale,Turkey` | "Laodicea" geocodes to wrong location; Pamukkale is adjacent to ruins |
+| `Denizli,Turkey` | `Pamukkale,Turkey` | Denizli geocodes to province center, 10km from Laodicea ruins |
+| `Selcuk,Turkey` | `Selcuk,Izmir,Turkey` | "Selcuk" alone geocodes to wrong village in Afyonkarahisar |
+
+### ⚠️ Province vs City Center Problem
+
+**Major cities can geocode to province/region centers** instead of city centers. This places markers 10-20km from the actual ancient sites.
+
+**Solution:** Add the province/district name for precision:
+- `Izmir,Turkey` → `Konak,Izmir,Turkey` (city center, not province)
+- `Selcuk,Turkey` → `Selcuk,Izmir,Turkey` (correct town, not wrong village)
+- `Denizli,Turkey` → `Pamukkale,Turkey` (near Laodicea ruins)
 
 ### How to Handle Ancient Names
 
