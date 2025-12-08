@@ -17,6 +17,11 @@ An interactive map visualization tool built with Leaflet.js that displays histor
 - Markdown format is both LLM-friendly and human-readable when rendered on GitHub
 
 ## Recent Changes
+- 2025-12-08: **ENHANCED README.md** - Added comprehensive GitHub-facing documentation
+  - Added project overview, features list, quick example URL
+  - Included URL format reference and link to llm.md for LLM instructions
+  - Added technology stack and MIT license
+  - README is concise (52 lines) and links to llm.md for detailed instructions
 - 2025-10-28: **ADDED GEOCODING BEST PRACTICES SECTION** - Critical documentation to prevent location errors
   - Added prominent "Geocoding Best Practices" section in llm.md after Service Overview
   - Created table of common geocoding mistakes (e.g., Philadelphia,Turkey → Alasehir,Turkey)
@@ -188,7 +193,8 @@ When enabled, shows color-coded travel paths where each segment between consecut
 .
 ├── index.html              # Main map application (static)
 ├── llm.md                  # LLM instruction documentation (static, web standard)
-└── replit.md              # Project documentation
+├── README.md               # GitHub-facing project documentation
+└── replit.md              # Project documentation (agent memory)
 ```
 
 All files are static and work identically in Replit development and GitHub Pages deployment.
