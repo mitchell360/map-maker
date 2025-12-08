@@ -4,11 +4,11 @@
 An interactive map visualization tool built with Leaflet.js that displays historical locations with labeled markers, optional walking paths between them, estimated ancient travel times, and toggleable country borders. Fully customizable via URL query parameters.
 
 ## Project Type
-- **Pure static site** - No custom server code
-- Static HTML files ready for GitHub Pages deployment
-- No build process required
+- **Hybrid architecture:** Static frontend + Flask backend for screenshot API
+- Static HTML files (`index.html`, `llm.md`) ready for GitHub Pages deployment
+- Flask server (`server.py`) provides `/screenshot` API endpoint for Replit development
 - Uses CDN-hosted libraries (Leaflet.js)
-- Simple Python static file server for Replit development/testing
+- Screenshot API uses Playwright with system Chromium from Nix
 
 ## User Preferences & Development Practices
 - **CRITICAL:** Whenever adding or updating features, ALWAYS update the LLM instructions:
@@ -193,9 +193,9 @@ When enabled, shows color-coded travel paths where each segment between consecut
 
 ## Running the Project
 **For Replit Development/Testing:**
-- Uses Python's built-in static file server: `python3 -m http.server 5000`
-- Serves files at http://localhost:5000/
-- No custom server logic - pure static file serving
+- Flask server with screenshot API: `python server.py`
+- Serves static files and provides `/screenshot` endpoint
+- Screenshot API uses system Chromium via Playwright
 
 **For GitHub Pages Deployment:**
 - Files are served as-is from the repository
@@ -208,6 +208,7 @@ When enabled, shows color-coded travel paths where each segment between consecut
 ├── index.html              # Main map application (static)
 ├── llm.md                  # LLM instruction documentation (static, web standard)
 ├── README.md               # GitHub-facing project documentation
+├── server.py               # Flask backend with screenshot API (Replit only)
 └── replit.md              # Project documentation (agent memory)
 ```
 
