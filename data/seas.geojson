@@ -1,0 +1,18 @@
+{
+"type": "FeatureCollection",
+"features": [
+{ "type": "Feature", "properties": { "latin": "Mare Internum", "modern": "Mediterranean Sea", "type": "sea" }, "geometry": { "type": "Point", "coordinates": [ 18.0, 35.0 ] } },
+{ "type": "Feature", "properties": { "latin": "Pontus Euxinus", "modern": "Black Sea", "type": "sea" }, "geometry": { "type": "Point", "coordinates": [ 34.0, 43.0 ] } },
+{ "type": "Feature", "properties": { "latin": "Mare Adriaticum", "modern": "Adriatic Sea", "type": "sea" }, "geometry": { "type": "Point", "coordinates": [ 15.5, 43.0 ] } },
+{ "type": "Feature", "properties": { "latin": "Mare Aegaeum", "modern": "Aegean Sea", "type": "sea" }, "geometry": { "type": "Point", "coordinates": [ 25.0, 38.0 ] } },
+{ "type": "Feature", "properties": { "latin": "Mare Tyrrhenum", "modern": "Tyrrhenian Sea", "type": "sea" }, "geometry": { "type": "Point", "coordinates": [ 11.5, 40.0 ] } },
+{ "type": "Feature", "properties": { "latin": "Mare Ionium", "modern": "Ionian Sea", "type": "sea" }, "geometry": { "type": "Point", "coordinates": [ 18.5, 37.5 ] } },
+{ "type": "Feature", "properties": { "latin": "Sinus Arabicus", "modern": "Red Sea", "type": "sea" }, "geometry": { "type": "Point", "coordinates": [ 38.0, 22.0 ] } },
+{ "type": "Feature", "properties": { "latin": "Propontis", "modern": "Sea of Marmara", "type": "sea" }, "geometry": { "type": "Point", "coordinates": [ 28.8, 40.7 ] } },
+{ "type": "Feature", "properties": { "latin": "Palus Maeotis", "modern": "Sea of Azov", "type": "sea" }, "geometry": { "type": "Point", "coordinates": [ 36.5, 46.0 ] } },
+{ "type": "Feature", "properties": { "latin": "Mare Ligusticum", "modern": "Ligurian Sea", "type": "sea" }, "geometry": { "type": "Point", "coordinates": [ 9.0, 43.5 ] } },
+{ "type": "Feature", "properties": { "latin": "Mare Balearicum", "modern": "Balearic Sea", "type": "sea" }, "geometry": { "type": "Point", "coordinates": [ 3.0, 40.0 ] } },
+{ "type": "Feature", "properties": { "latin": "Sinus Persicus", "modern": "Persian Gulf", "type": "sea" }, "geometry": { "type": "Point", "coordinates": [ 51.0, 27.0 ] } },
+{ "type": "Feature", "properties": { "latin": "Mare Caspium", "modern": "Caspian Sea", "type": "sea" }, "geometry": { "type": "Point", "coordinates": [ 51.0, 41.0 ] } }
+]
+}
