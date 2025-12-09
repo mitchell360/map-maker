@@ -24,7 +24,7 @@ The tool uses a hybrid architecture with a static frontend and a Flask backend f
   - **Your Journey:** Route & Travel Time toggle
   - **Roman Infrastructure:** Roman Roads, Sea Lanes, Bridges, Aqueducts
   - **Settlements:** Famous Cities (50, default on), Major Cities (1.5k), All Cities (16k+), Fortifications
-  - **Political:** Roman Provinces (with period selector: 60 BC, 117 AD, 200 AD), Modern Borders
+  - **Political:** Roman Provinces (53 named provinces with clickable labels), Modern Borders
   - **Water Features:** Rivers, Lakes, Sea Names, Sailing Routes
 - **Three-Tier City System:** Famous Cities shows 50 curated major ancient cities (Rome, Athens, Alexandria, Jerusalem, Carthage, etc.) with Latin name labels by default. Click markers to see Latin, modern, and Greek names in popup.
 - **Lazy Loading Overlays:** Ancient world data layers load on-demand when toggled to minimize initial load time.
