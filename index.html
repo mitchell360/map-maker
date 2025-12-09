@@ -229,6 +229,21 @@ drawerBackdrop.addEventListener('click',closeDrawer);
 // Local coordinate dictionary (loaded from coordinates.json)
 let localCoords=null;
 
+// Sailing routes graph for sea routing
+let sailingPorts={}; // {portName: {lat, lon}}
+let sailingGraph={}; // {portName: [{to, dist}, ...]}
+
+// Calculate straight-line distance between two points (accepts {lat,lon} objects)
+function haversineDistance(start,end){
+  const R=6371e3;
+  const lat1=start.lat*Math.PI/180,lat2=end.lat*Math.PI/180;
+  const dLat=(end.lat-start.lat)*Math.PI/180;
+  const dLon=(end.lon-start.lon)*Math.PI/180;
+  const a=Math.sin(dLat/2)**2+Math.cos(lat1)*Math.cos(lat2)*Math.sin(dLon/2)**2;
+  const c=2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+  return R*c;
+}
+
 // Load local coordinates dictionary
 async function loadLocalCoords(){
   try{
@@ -239,6 +254,128 @@ async function loadLocalCoords(){
       console.log(`Loaded ${localCoords.length} local coordinates`);
     }
   }catch(e){console.log('Local coordinates not available, using Nominatim only');}
+}
+
+// Load sailing routes and build graph for sea routing
+async function loadSailingGraph(){
+  try{
+    const r=await fetch('sailing_routes.json');
+    if(r.ok){
+      const data=await r.json();
+      sailingPorts=data.ports||{};
+      // Build adjacency list with distances
+      sailingGraph={};
+      for(const portName of Object.keys(sailingPorts)){
+        sailingGraph[portName]=[];
+      }
+      for(const route of (data.routes||[])){
+        const from=route.from;
+        const to=route.to;
+        if(sailingPorts[from]&&sailingPorts[to]){
+          const fromP=sailingPorts[from];
+          const toP=sailingPorts[to];
+          const dist=haversineDistance({lat:fromP.lat,lon:fromP.lon},{lat:toP.lat,lon:toP.lon});
+          sailingGraph[from].push({to,dist});
+          sailingGraph[to].push({to:from,dist}); // Bidirectional
+        }
+      }
+      console.log(`Loaded ${Object.keys(sailingPorts).length} sailing ports, ${(data.routes||[]).length} routes`);
+    }
+  }catch(e){console.log('Sailing routes not available');}
+}
+
+// Find nearest port to a coordinate
+function findNearestPort(coord){
+  let nearest=null;
+  let minDist=Infinity;
+  for(const [name,port] of Object.entries(sailingPorts)){
+    const dist=haversineDistance(coord,{lat:port.lat,lon:port.lon});
+    if(dist<minDist){
+      minDist=dist;
+      nearest={name,lat:port.lat,lon:port.lon,dist};
+    }
+  }
+  return nearest;
+}
+
+// Dijkstra shortest path between two ports
+function dijkstraSeaPath(startPort,endPort){
+  if(!sailingGraph[startPort]||!sailingGraph[endPort])return null;
+  
+  const dist={};
+  const prev={};
+  const visited=new Set();
+  const pq=[{port:startPort,dist:0}];
+  
+  for(const port of Object.keys(sailingGraph)){
+    dist[port]=Infinity;
+  }
+  dist[startPort]=0;
+  
+  while(pq.length>0){
+    // Get minimum distance node
+    pq.sort((a,b)=>a.dist-b.dist);
+    const {port:current}=pq.shift();
+    
+    if(visited.has(current))continue;
+    visited.add(current);
+    
+    if(current===endPort)break;
+    
+    for(const edge of sailingGraph[current]){
+      if(visited.has(edge.to))continue;
+      const newDist=dist[current]+edge.dist;
+      if(newDist<dist[edge.to]){
+        dist[edge.to]=newDist;
+        prev[edge.to]=current;
+        pq.push({port:edge.to,dist:newDist});
+      }
+    }
+  }
+  
+  if(dist[endPort]===Infinity)return null;
+  
+  // Reconstruct path
+  const path=[];
+  let current=endPort;
+  while(current){
+    const port=sailingPorts[current];
+    path.unshift({name:current,lat:port.lat,lon:port.lon});
+    current=prev[current];
+  }
+  
+  return{path,distance:dist[endPort]};
+}
+
+// Get sea route between two arbitrary coordinates
+function getSeaRoute(start,end){
+  const startPort=findNearestPort(start);
+  const endPort=findNearestPort(end);
+  
+  if(!startPort||!endPort)return null;
+  
+  // If ports are too far from coordinates (>200km), not a valid sea route
+  if(startPort.dist>200000||endPort.dist>200000)return null;
+  
+  // Same port - no sea routing needed
+  if(startPort.name===endPort.name)return null;
+  
+  const result=dijkstraSeaPath(startPort.name,endPort.name);
+  if(!result)return null;
+  
+  // Build full path: start coord -> start port -> ... -> end port -> end coord
+  const fullPath=[{lat:start.lat,lon:start.lon}];
+  for(const port of result.path){
+    fullPath.push({lat:port.lat,lon:port.lon});
+  }
+  fullPath.push({lat:end.lat,lon:end.lon});
+  
+  // Calculate total distance including connector legs
+  let totalDist=result.distance;
+  totalDist+=startPort.dist; // Start to embark port
+  totalDist+=endPort.dist;   // Disembark port to end
+  
+  return{path:fullPath,distance:totalDist,startPort:startPort.name,endPort:endPort.name};
 }
 
 // Normalize location string for matching
@@ -313,6 +450,9 @@ function hideLoading(){
   
   // Load local coordinates dictionary first (for fast geocoding)
   await loadLocalCoords();
+  
+  // Load sailing routes graph for sea routing
+  await loadSailingGraph();
   
   const map=L.map('map',{zoomControl:true}).setView([20,0],2);
   const dare=L.tileLayer('https://dh.gu.se/tiles/imperium/{z}/{x}/{y}.png',{minZoom:4,maxZoom:11,attribution:'© <a href="https://dh.gu.se/dare/">Digital Atlas of the Roman Empire</a>'}).addTo(map);
@@ -742,17 +882,6 @@ function hideLoading(){
       // Mediterranean bounding box for water crossing detection
       const WATER_BOUNDS={minLat:30,maxLat:46,minLon:-6,maxLon:36};
       
-      // Calculate straight-line distance between two points (accepts {lat,lon} objects)
-      function haversineDistance(start,end){
-        const R=6371e3;
-        const lat1=start.lat*Math.PI/180,lat2=end.lat*Math.PI/180;
-        const dLat=(end.lat-start.lat)*Math.PI/180;
-        const dLon=(end.lon-start.lon)*Math.PI/180;
-        const a=Math.sin(dLat/2)**2+Math.cos(lat1)*Math.cos(lat2)*Math.sin(dLon/2)**2;
-        const c=2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
-        return R*c;
-      }
-      
       // Check if a path segment likely crosses water (Mediterranean)
       // OSRM includes modern ferries, so a LOW ratio (route close to straight-line) indicates water crossing
       // True land-only routes going around water would have HIGH ratios (1.5-3x straight-line)
@@ -776,7 +905,7 @@ function hideLoading(){
         return ratio<1.35;
       }
       
-      // Analyze each leg for water crossings and draw water routes
+      // Analyze each leg for water crossings and draw water routes using sailing graph
       const legWaterInfo=[];
       for(let i=0;i<chronoCoords.length-1;i++){
         const start=chronoCoords[i];
@@ -785,24 +914,49 @@ function hideLoading(){
         const straightDist=haversineDistance(start,end);
         const isWater=isWaterCrossing(start,end,routeDist);
         
-        // Draw straight-line water crossing route (dashed cyan) for detected sea segments
+        // Try to get proper sea route using sailing routes graph
+        let seaRoute=null;
+        let seaRouteDist=straightDist;
         if(isWater){
-          const waterLatlngs=[[start.lat,start.lon],[end.lat,end.lon]];
-          // White background for visibility
-          L.polyline(waterLatlngs,{color:'#ffffff',weight:6,opacity:0.9}).addTo(travelLineAndTime);
-          // Cyan dashed line for water route
-          L.polyline(waterLatlngs,{color:'#06b6d4',weight:4,opacity:0.9,dashArray:'12,8'}).addTo(travelLineAndTime);
-          // Add anchor icon at midpoint
-          const midLat=(start.lat+end.lat)/2;
-          const midLon=(start.lon+end.lon)/2;
-          const anchorHtml='<div style="width:24px;height:24px;background:#06b6d4;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 2px 6px rgba(0,0,0,0.3),0 0 0 2px #fff">⚓</div>';
-          L.marker([midLat,midLon],{
-            icon:L.divIcon({className:'water-marker',html:anchorHtml,iconSize:[24,24],iconAnchor:[12,12]}),
-            interactive:false
-          }).addTo(travelLineAndTime);
+          seaRoute=getSeaRoute(start,end);
+          if(seaRoute){
+            seaRouteDist=seaRoute.distance;
+          }
         }
         
-        legWaterInfo.push({isWater,straightDist,routeDist:routeDist||straightDist});
+        // Draw water crossing route (dashed cyan) for detected sea segments
+        if(isWater){
+          if(seaRoute&&seaRoute.path.length>1){
+            // Draw proper sea route following port graph
+            const waterLatlngs=seaRoute.path.map(p=>[p.lat,p.lon]);
+            // White background for visibility
+            L.polyline(waterLatlngs,{color:'#ffffff',weight:6,opacity:0.9}).addTo(travelLineAndTime);
+            // Cyan dashed line for water route
+            L.polyline(waterLatlngs,{color:'#06b6d4',weight:4,opacity:0.9,dashArray:'12,8'}).addTo(travelLineAndTime);
+            // Add anchor icon at midpoint of sea path
+            const midIdx=Math.floor(seaRoute.path.length/2);
+            const midPt=seaRoute.path[midIdx];
+            const anchorHtml='<div style="width:24px;height:24px;background:#06b6d4;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 2px 6px rgba(0,0,0,0.3),0 0 0 2px #fff">⚓</div>';
+            L.marker([midPt.lat,midPt.lon],{
+              icon:L.divIcon({className:'water-marker',html:anchorHtml,iconSize:[24,24],iconAnchor:[12,12]}),
+              interactive:false
+            }).addTo(travelLineAndTime);
+          }else{
+            // Fallback to straight line if no graph route available
+            const waterLatlngs=[[start.lat,start.lon],[end.lat,end.lon]];
+            L.polyline(waterLatlngs,{color:'#ffffff',weight:6,opacity:0.9}).addTo(travelLineAndTime);
+            L.polyline(waterLatlngs,{color:'#06b6d4',weight:4,opacity:0.9,dashArray:'12,8'}).addTo(travelLineAndTime);
+            const midLat=(start.lat+end.lat)/2;
+            const midLon=(start.lon+end.lon)/2;
+            const anchorHtml='<div style="width:24px;height:24px;background:#06b6d4;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 2px 6px rgba(0,0,0,0.3),0 0 0 2px #fff">⚓</div>';
+            L.marker([midLat,midLon],{
+              icon:L.divIcon({className:'water-marker',html:anchorHtml,iconSize:[24,24],iconAnchor:[12,12]}),
+              interactive:false
+            }).addTo(travelLineAndTime);
+          }
+        }
+        
+        legWaterInfo.push({isWater,straightDist,routeDist:routeDist||straightDist,seaRouteDist});
       }
       
       // Calculate travel time based on distance and transport mode
@@ -838,8 +992,8 @@ function hideLoading(){
           const legDist=info.routeDist||info.straightDist;
           
           if(currentRouteMode==='water'&&info.isWater){
-            // Use sailing for water crossings
-            const waterDist=info.straightDist;
+            // Use sailing for water crossings (use proper sea route distance if available)
+            const waterDist=info.seaRouteDist||info.straightDist;
             totalWaterDist+=waterDist;
             totalWaterHours+=waterDist/1000/SAILING_SPEED_KMH;
             legDetails.push({type:'water',dist:waterDist,speed:SAILING_SPEED_KMH,name:`${chronoNames[i]} → ${chronoNames[i+1]}`});
