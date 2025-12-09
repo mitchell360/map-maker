@@ -476,27 +476,25 @@ Please provide complete location details.
 
 ### Route Type Selector
 When "Travel Line and Time" overlay is enabled, you can choose how the journey handles water crossings:
-- **Land Only** - Uses OSRM road routing (note: OSRM includes modern ferries, so displayed distances reflect ferry-assisted routes)
-- **Use Water** - Detects Mediterranean crossings and calculates sailing time at 4 knots (7.4 km/h)
+- **Land Only** - Routes only on the Roman Roads network (14,993 land segments + 834 river crossings)
+- **Use Water** - Routes on both Roman Roads AND itiner-e Sea Lanes (524 sea segments) for optimal mixed land/water routing
 
-**Dual Route Display:**
-Both routes are drawn on the map simultaneously when water crossings are detected:
-- **Purple solid lines** - OSRM calculated route (land roads, may include ferry connections)
-- **Cyan dashed lines** - Straight-line sea crossing routes with anchor (⚓) icons at midpoints
+**Graph-Based Routing:**
+The system uses client-side Dijkstra shortest path on a preprocessed routing graph (11,031 nodes, 16,351 edges) built from the itiner-e Roman Roads dataset. This provides authentic ancient world routing without relying on external APIs.
 
-This allows users to visually compare land vs. sea routes. The Route Type toggle controls which distance/time calculation is shown in the info box.
+**Connector Legs:**
+The straight-line distance from the user's location to the nearest road/port node is treated as land travel (walking to/from the network). This is semantically correct for historical travel.
 
-**Water Crossing Detection:**
-The system detects water crossings by analyzing the OSRM route vs. straight-line distance ratio. Since OSRM includes modern ferries, a LOW ratio (< 1.35) indicates the route used a near-direct ferry crossing. True land-only routes going around water bodies have higher ratios (1.5-3x). Detection requires:
-- Segment midpoint within Mediterranean basin (lat 30-46, lon -6 to 36)
-- Straight-line distance > 100 km
-- OSRM route/straight-line ratio < 1.35
+**Travel Time Calculation:**
+- Land segments use the selected transport mode speed (Walking: 4 km/h, Ox cart: 2 km/h, Pack animal: 4.5 km/h, Horse courier: 6 km/h)
+- Sea segments use sailing speed of 4 knots (7.4 km/h)
+- River segments are classified as land for travel time purposes
 
 **Map Legend:**
-When water crossings are detected, a legend appears in the travel info panel explaining line styles.
+When sea segments are included in a route, a legend appears in the travel info panel explaining line styles.
 
 When "Use Water" is selected:
-- Detected water segments use straight-line distance at sailing speed (4 knots)
+- Routes may include sea lane segments for optimal paths
 - Water segments show an anchor icon (⚓) in the leg breakdown
 - A summary shows land vs. sea distance and time breakdown
 
