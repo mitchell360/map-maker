@@ -62,7 +62,7 @@
     
     /* Instructions link - responsive */
     /* Instructions button - always shows as ? in upper right on all devices */
-    .instructions-link{position:absolute;top:60px;right:12px;z-index:400;background:#fff;border-radius:50%;box-shadow:0 2px 12px rgba(0,0,0,.2);border:2px solid #0369a1;padding:0;width:36px;height:36px;display:flex;align-items:center;justify-content:center}
+    .instructions-link{position:absolute;top:10px;left:10px;z-index:1100;background:#fff;border-radius:50%;box-shadow:0 2px 12px rgba(0,0,0,.2);border:2px solid #0369a1;padding:0;width:36px;height:36px;display:flex;align-items:center;justify-content:center}
     .instructions-link a{color:#0369a1;text-decoration:none;font-weight:700;font-size:20px;display:flex;width:100%;height:100%;align-items:center;justify-content:center}
     .instructions-link a:hover{background:#f0f9ff;border-radius:50%}
     
@@ -134,6 +134,35 @@
     .route-btn.active{background:#0891b2;color:#fff;border-color:#0891b2}
     .route-btn .icon{margin-right:4px}
     .water-breakdown{margin-top:6px;padding:6px 8px;background:#f0fdfa;border-radius:4px;font-size:11px;color:#0f766e}
+    
+    /* Custom layer control panel */
+    .layer-panel{position:absolute;top:10px;right:10px;z-index:1000;background:#fff;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.2);font:13px/1.4 system-ui,-apple-system,sans-serif;max-height:calc(100vh - 100px);overflow-y:auto;min-width:220px}
+    .layer-panel-header{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid #e5e7eb;cursor:pointer;user-select:none}
+    .layer-panel-header h3{margin:0;font-size:14px;font-weight:600;color:#374151}
+    .layer-panel-toggle{font-size:12px;color:#6b7280;transition:transform 0.2s}
+    .layer-panel.collapsed .layer-panel-toggle{transform:rotate(-90deg)}
+    .layer-panel.collapsed .layer-panel-content{display:none}
+    .layer-panel-content{padding:8px 0}
+    .layer-section{border-bottom:1px solid #f3f4f6}
+    .layer-section:last-child{border-bottom:none}
+    .layer-section-header{display:flex;align-items:center;padding:8px 12px;cursor:pointer;user-select:none;background:#f9fafb;font-weight:500;font-size:12px;color:#4b5563}
+    .layer-section-header:hover{background:#f3f4f6}
+    .layer-section-icon{margin-right:6px;font-size:14px}
+    .layer-section-arrow{margin-left:auto;font-size:10px;color:#9ca3af;transition:transform 0.2s}
+    .layer-section.collapsed .layer-section-arrow{transform:rotate(-90deg)}
+    .layer-section.collapsed .layer-section-items{display:none}
+    .layer-section-items{padding:4px 0}
+    .layer-item{display:flex;align-items:center;padding:6px 12px 6px 24px;cursor:pointer}
+    .layer-item:hover{background:#f9fafb}
+    .layer-item input{margin:0 8px 0 0;cursor:pointer}
+    .layer-item label{cursor:pointer;flex:1;font-size:12px;color:#374151}
+    .layer-item-sub{font-size:10px;color:#9ca3af;margin-left:4px}
+    .base-map-item{padding:6px 12px 6px 16px}
+    .base-map-item input[type="radio"]{margin:0 8px 0 0}
+    .layer-dropdown{margin-left:auto;padding:2px 6px;font-size:10px;border:1px solid #d1d5db;border-radius:4px;background:#fff;cursor:pointer}
+    @media (max-width: 768px) {
+      .layer-panel{top:auto;bottom:80px;right:10px;left:10px;max-height:50vh;min-width:auto}
+    }
   </style>
 </head>
 <body>
@@ -695,10 +724,19 @@ function hideLoading(){
   await loadSailingGraph();
   
   const map=L.map('map',{zoomControl:true}).setView([20,0],2);
-  const dare=L.tileLayer('https://dh.gu.se/tiles/imperium/{z}/{x}/{y}.png',{minZoom:4,maxZoom:11,attribution:'© <a href="https://dh.gu.se/dare/">Digital Atlas of the Roman Empire</a>'}).addTo(map);
+  
+  // Base map layers
+  const dareBackground=L.tileLayer('https://klokantech.github.io/dare-raster-tiles/background/{z}/{x}/{y}.png',{minZoom:0,maxZoom:11,attribution:'© DARE Background'});
+  const dareHillshade=L.tileLayer('https://klokantech.github.io/dare-raster-tiles/hillshade/{z}/{x}/{y}.png',{minZoom:0,maxZoom:11,opacity:0.4});
+  const dareTerrain=L.layerGroup([dareBackground,dareHillshade]); // Combined terrain with hillshade
+  dareTerrain.addTo(map);
+  
+  const dareFull=L.tileLayer('https://dh.gu.se/tiles/imperium/{z}/{x}/{y}.png',{minZoom:4,maxZoom:11,attribution:'© <a href="https://dh.gu.se/dare/">Digital Atlas of the Roman Empire</a>'});
   const positron=L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap © CartoDB'});
   const osm=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'});
-  const baseLayers={'Ancient World':dare,'Modern (Clean)':positron,'Modern (Detailed)':osm};
+  
+  let currentBaseMap='terrain';
+  const baseMaps={terrain:dareTerrain,full:dareFull,positron:positron,osm:osm};
   
   // Check if ANY URL parameters exist (excluding cache-buster)
   const urlParamsRaw=new URLSearchParams(window.location.search);
@@ -721,12 +759,28 @@ function hideLoading(){
   const blueIcon=L.icon({iconUrl:'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',shadowUrl:'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',iconSize:[25,41],iconAnchor:[12,41],popupAnchor:[1,-34],shadowSize:[41,41]});
   const redIcon=L.icon({iconUrl:'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',shadowUrl:'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',iconSize:[25,41],iconAnchor:[12,41],popupAnchor:[1,-34],shadowSize:[41,41]});
   
-  // Create overlay layers
+  // Create overlay layers - Your Journey
   const countryBorders=L.layerGroup();
   const travelLineAndTime=L.layerGroup();
   const romanRoads=L.layerGroup();
   const seaLanes=L.layerGroup();
   const sailingRoutes=L.layerGroup();
+  
+  // Create overlay layers - Ancient World
+  const ancientPlaces=L.layerGroup();
+  const ancientProvinces=L.layerGroup();
+  const ancientRivers=L.layerGroup();
+  const ancientLakes=L.layerGroup();
+  const ancientAqueducts=L.layerGroup();
+  const ancientFortifications=L.layerGroup();
+  
+  // Track which layers are loaded
+  const layerLoadState={
+    places:false,provinces:false,rivers:false,lakes:false,aqueducts:false,fortifications:false
+  };
+  
+  // Label language setting
+  let labelLanguage='latin'; // 'latin', 'modern', 'greek'
   
   // Add invisible placeholder so layer shows in control
   travelLineAndTime.addLayer(L.circle([0,0],{radius:1,opacity:0}));
@@ -914,22 +968,272 @@ function hideLoading(){
       .catch(e=>console.error('Sailing routes load error:',e));
   }
   
+  // Load Ancient Places from data file
+  function loadAncientPlaces(){
+    if(layerLoadState.places)return;
+    layerLoadState.places=true;
+    fetch('data/places.geojson')
+      .then(r=>r.json())
+      .then(data=>{
+        const layer=L.geoJSON(data,{
+          pointToLayer:(f,latlng)=>{
+            const major=f.properties.major===1;
+            return L.circleMarker(latlng,{
+              radius:major?6:4,
+              fillColor:major?'#dc2626':'#f59e0b',
+              color:'#fff',
+              weight:1,
+              opacity:1,
+              fillOpacity:0.8
+            });
+          },
+          onEachFeature:(f,layer)=>{
+            const p=f.properties;
+            const name=labelLanguage==='latin'?p.latin:(labelLanguage==='greek'&&p.greek?p.greek:p.modern);
+            const displayName=name||p.latin||p.modern||'Unknown';
+            layer.bindPopup(`<b>${displayName}</b><br><span style="color:#6b7280">Latin: ${p.latin||'—'}<br>Modern: ${p.modern||'—'}</span>`);
+          }
+        });
+        ancientPlaces.clearLayers();
+        ancientPlaces.addLayer(layer);
+        console.log(`Loaded ${data.features.length} ancient places`);
+      }).catch(e=>console.error('Places load error:',e));
+  }
+  
+  // Load Ancient Provinces
+  function loadAncientProvinces(){
+    if(layerLoadState.provinces)return;
+    layerLoadState.provinces=true;
+    fetch('data/provinces.geojson')
+      .then(r=>r.json())
+      .then(data=>{
+        const layer=L.geoJSON(data,{
+          style:{color:'#7c3aed',weight:2,opacity:0.7,fillOpacity:0.05,fillColor:'#7c3aed'},
+          onEachFeature:(f,layer)=>{
+            layer.bindPopup(`<b>${f.properties.name||'Province'}</b>`);
+          }
+        });
+        ancientProvinces.clearLayers();
+        ancientProvinces.addLayer(layer);
+        console.log(`Loaded ${data.features.length} provinces`);
+      }).catch(e=>console.error('Provinces load error:',e));
+  }
+  
+  // Load Rivers
+  function loadAncientRivers(){
+    if(layerLoadState.rivers)return;
+    layerLoadState.rivers=true;
+    fetch('data/rivers.geojson')
+      .then(r=>r.json())
+      .then(data=>{
+        const layer=L.geoJSON(data,{
+          style:{color:'#3b82f6',weight:1.5,opacity:0.7},
+          onEachFeature:(f,layer)=>{
+            const p=f.properties;
+            const name=p.latin||p.name||p.modern||'River';
+            layer.bindPopup(`<b>${name}</b><br><span style="color:#6b7280">${p.modern||''}</span>`);
+          }
+        });
+        ancientRivers.clearLayers();
+        ancientRivers.addLayer(layer);
+        console.log(`Loaded rivers`);
+      }).catch(e=>console.error('Rivers load error:',e));
+  }
+  
+  // Load Lakes
+  function loadAncientLakes(){
+    if(layerLoadState.lakes)return;
+    layerLoadState.lakes=true;
+    fetch('data/lakes.geojson')
+      .then(r=>r.json())
+      .then(data=>{
+        const layer=L.geoJSON(data,{
+          style:{color:'#0ea5e9',weight:1,opacity:0.7,fillOpacity:0.3,fillColor:'#0ea5e9'},
+          onEachFeature:(f,layer)=>{
+            const p=f.properties;
+            const name=p.latin||p.name||p.modern||'Lake';
+            layer.bindPopup(`<b>${name}</b><br><span style="color:#6b7280">${p.modern||''}</span>`);
+          }
+        });
+        ancientLakes.clearLayers();
+        ancientLakes.addLayer(layer);
+        console.log(`Loaded lakes`);
+      }).catch(e=>console.error('Lakes load error:',e));
+  }
+  
+  // Load Aqueducts
+  function loadAncientAqueducts(){
+    if(layerLoadState.aqueducts)return;
+    layerLoadState.aqueducts=true;
+    fetch('data/aqueducts.geojson')
+      .then(r=>r.json())
+      .then(data=>{
+        const layer=L.geoJSON(data,{
+          style:{color:'#0d9488',weight:2,opacity:0.8,dashArray:'4,4'},
+          onEachFeature:(f,layer)=>{
+            const p=f.properties;
+            layer.bindPopup(`<b>Aqueduct</b><br><span style="color:#6b7280">${p.Name||p.en_name||'Roman Aqueduct'}</span>`);
+          }
+        });
+        ancientAqueducts.clearLayers();
+        ancientAqueducts.addLayer(layer);
+        console.log(`Loaded aqueducts`);
+      }).catch(e=>console.error('Aqueducts load error:',e));
+  }
+  
+  // Load Fortifications
+  function loadAncientFortifications(){
+    if(layerLoadState.fortifications)return;
+    layerLoadState.fortifications=true;
+    fetch('data/fortifications.geojson')
+      .then(r=>r.json())
+      .then(data=>{
+        const layer=L.geoJSON(data,{
+          pointToLayer:(f,latlng)=>L.circleMarker(latlng,{radius:4,fillColor:'#64748b',color:'#1e293b',weight:1,opacity:1,fillOpacity:0.8}),
+          style:{color:'#64748b',weight:2,opacity:0.8},
+          onEachFeature:(f,layer)=>{
+            const p=f.properties;
+            layer.bindPopup(`<b>${p.name||'Fortification'}</b>`);
+          }
+        });
+        ancientFortifications.clearLayers();
+        ancientFortifications.addLayer(layer);
+        console.log(`Loaded fortifications`);
+      }).catch(e=>console.error('Fortifications load error:',e));
+  }
+  
   // Load layers when overlay is added
   map.on('overlayadd',function(e){
     if(e.layer===romanRoads)loadRomanRoads();
     if(e.layer===seaLanes)loadSeaLanes();
     if(e.layer===sailingRoutes)loadSailingRoutes();
+    if(e.layer===ancientPlaces)loadAncientPlaces();
+    if(e.layer===ancientProvinces)loadAncientProvinces();
+    if(e.layer===ancientRivers)loadAncientRivers();
+    if(e.layer===ancientLakes)loadAncientLakes();
+    if(e.layer===ancientAqueducts)loadAncientAqueducts();
+    if(e.layer===ancientFortifications)loadAncientFortifications();
   });
   
-  // Overlays are OFF by default but available in layer control
-  const overlays={
-    'Country Borders':countryBorders,
-    'Roman Roads':romanRoads,
-    'Sea Lanes (itiner-e)':seaLanes,
-    'Sailing Routes (Mendeley)':sailingRoutes,
-    'Travel Line and Time':travelLineAndTime
-  };
-  L.control.layers(baseLayers,overlays,{collapsed:true}).addTo(map);
+  // Build custom layer control panel
+  function buildLayerPanel(){
+    const panel=document.createElement('div');
+    panel.className='layer-panel';
+    panel.innerHTML=`
+      <div class="layer-panel-header" onclick="this.parentElement.classList.toggle('collapsed')">
+        <h3>Layers</h3>
+        <span class="layer-panel-toggle">▼</span>
+      </div>
+      <div class="layer-panel-content">
+        <div class="layer-section">
+          <div class="layer-section-header" onclick="this.parentElement.classList.toggle('collapsed')">
+            <span class="layer-section-icon">🗺️</span>Base Map
+            <span class="layer-section-arrow">▼</span>
+          </div>
+          <div class="layer-section-items">
+            <div class="base-map-item"><input type="radio" name="basemap" value="terrain" checked><label>Ancient Terrain</label></div>
+            <div class="base-map-item"><input type="radio" name="basemap" value="full"><label>Ancient Full (DARE)</label></div>
+            <div class="base-map-item"><input type="radio" name="basemap" value="positron"><label>Modern Clean</label></div>
+            <div class="base-map-item"><input type="radio" name="basemap" value="osm"><label>Modern Detailed</label></div>
+          </div>
+        </div>
+        <div class="layer-section">
+          <div class="layer-section-header" onclick="this.parentElement.classList.toggle('collapsed')">
+            <span class="layer-section-icon">📍</span>Your Journey
+            <span class="layer-section-arrow">▼</span>
+          </div>
+          <div class="layer-section-items">
+            <div class="layer-item"><input type="checkbox" id="layer-travel"><label for="layer-travel">Route & Travel Time</label></div>
+          </div>
+        </div>
+        <div class="layer-section collapsed">
+          <div class="layer-section-header" onclick="this.parentElement.classList.toggle('collapsed')">
+            <span class="layer-section-icon">🏛️</span>Roman Infrastructure
+            <span class="layer-section-arrow">▼</span>
+          </div>
+          <div class="layer-section-items">
+            <div class="layer-item"><input type="checkbox" id="layer-roads"><label for="layer-roads">Roman Roads</label></div>
+            <div class="layer-item"><input type="checkbox" id="layer-sealanes"><label for="layer-sealanes">Sea Lanes</label></div>
+            <div class="layer-item"><input type="checkbox" id="layer-aqueducts"><label for="layer-aqueducts">Aqueducts</label></div>
+          </div>
+        </div>
+        <div class="layer-section collapsed">
+          <div class="layer-section-header" onclick="this.parentElement.classList.toggle('collapsed')">
+            <span class="layer-section-icon">🏘️</span>Settlements
+            <span class="layer-section-arrow">▼</span>
+          </div>
+          <div class="layer-section-items">
+            <div class="layer-item"><input type="checkbox" id="layer-places"><label for="layer-places">Ancient Cities</label></div>
+            <div class="layer-item"><input type="checkbox" id="layer-forts"><label for="layer-forts">Fortifications</label></div>
+          </div>
+        </div>
+        <div class="layer-section collapsed">
+          <div class="layer-section-header" onclick="this.parentElement.classList.toggle('collapsed')">
+            <span class="layer-section-icon">🗺️</span>Political
+            <span class="layer-section-arrow">▼</span>
+          </div>
+          <div class="layer-section-items">
+            <div class="layer-item"><input type="checkbox" id="layer-provinces"><label for="layer-provinces">Roman Provinces</label></div>
+            <div class="layer-item"><input type="checkbox" id="layer-borders"><label for="layer-borders">Modern Borders</label></div>
+          </div>
+        </div>
+        <div class="layer-section collapsed">
+          <div class="layer-section-header" onclick="this.parentElement.classList.toggle('collapsed')">
+            <span class="layer-section-icon">💧</span>Water Features
+            <span class="layer-section-arrow">▼</span>
+          </div>
+          <div class="layer-section-items">
+            <div class="layer-item"><input type="checkbox" id="layer-rivers"><label for="layer-rivers">Rivers</label></div>
+            <div class="layer-item"><input type="checkbox" id="layer-lakes"><label for="layer-lakes">Lakes</label></div>
+            <div class="layer-item"><input type="checkbox" id="layer-sailing"><label for="layer-sailing">Sailing Routes</label></div>
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(panel);
+    
+    // Base map switching
+    panel.querySelectorAll('input[name="basemap"]').forEach(radio=>{
+      radio.addEventListener('change',function(){
+        Object.values(baseMaps).forEach(l=>map.removeLayer(l));
+        baseMaps[this.value].addTo(map);
+        currentBaseMap=this.value;
+      });
+    });
+    
+    // Overlay toggles
+    const layerMap={
+      'layer-travel':travelLineAndTime,
+      'layer-roads':romanRoads,
+      'layer-sealanes':seaLanes,
+      'layer-aqueducts':ancientAqueducts,
+      'layer-places':ancientPlaces,
+      'layer-forts':ancientFortifications,
+      'layer-provinces':ancientProvinces,
+      'layer-borders':countryBorders,
+      'layer-rivers':ancientRivers,
+      'layer-lakes':ancientLakes,
+      'layer-sailing':sailingRoutes
+    };
+    
+    Object.entries(layerMap).forEach(([id,layer])=>{
+      const checkbox=panel.querySelector(`#${id}`);
+      if(checkbox){
+        checkbox.addEventListener('change',function(){
+          if(this.checked){
+            layer.addTo(map);
+            map.fire('overlayadd',{layer});
+          }else{
+            map.removeLayer(layer);
+          }
+        });
+      }
+    });
+    
+    return panel;
+  }
+  
+  buildLayerPanel();
 
   // Default data using new combined format
   const defaultChronoData='Antioch,Turkey~Antioch%0A47-48 AD: Antioch, Syria%0A2025 AD: Antakya, Turkey%0A%0AAntioch served as the primary mission base for Paul\'s ministry to the Gentiles and was where believers were first called Christians|Philippi,Greece~Philippi%0A49-50 AD: Philippi, Macedonia%0A2025 AD: Filippoi, Greece%0A%0APhilippi was the first European city where Paul established a Christian congregation during his second missionary journey|Ephesus,Turkey~Ephesus%0A52-54 AD: Ephesus, Asia Minor%0A2025 AD: Selçuk, Turkey%0A%0APaul ministered in Ephesus for approximately three years during his third missionary journey|Rome,Italy~Rome%0A62 AD: Rome, Capitol of the Roman Empire%0A2025 AD: Rome, Italy%0A%0APaul was held under house arrest in Rome from approximately AD 60 to 62';
