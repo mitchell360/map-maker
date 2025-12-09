@@ -26,8 +26,9 @@ The tool uses a hybrid architecture with a static frontend and a Flask backend f
 **Technical Implementations:**
 - **URL-Driven Customization:** All features are controllable via query parameters, with `chronoLocationsAndLabels` and `referenceLocationsAndLabels` using a `Location~Label|Location~Label` format to eliminate count mismatch errors.
 - **Fast Local Geocoding:** A `coordinates.json` file contains 90+ pre-computed coordinates for common biblical/historical locations, enabling instant lookup without API calls. Falls back to Nominatim API for unknown locations.
-- **Dual Route Display:** Both OSRM land routes (purple solid) and straight-line sea crossing routes (cyan dashed with anchor icons) are drawn simultaneously when water crossings are detected, allowing visual comparison.
-- **Water Crossing Detection:** Uses OSRM route vs. straight-line distance ratio heuristic (ratio < 1.35 indicates ferry/water usage).
+- **Graph-Based Sea Routing:** When water crossings are detected, uses Dijkstra shortest path algorithm on the sailing_routes.json graph (58 ports, 211 routes) to find proper maritime paths following ancient sea lanes. Sea routes are drawn as cyan dashed polylines connecting ports, avoiding straight lines over land.
+- **Dual Route Display:** Both OSRM land routes (purple solid) and graph-based sea routes (cyan dashed with anchor icons) are drawn simultaneously when water crossings are detected.
+- **Water Crossing Detection:** Uses OSRM route vs. straight-line distance ratio heuristic (ratio < 1.35 indicates ferry/water usage). Journey endpoints are snapped to nearest ports (within 200km) for sea routing.
 - **Geocoding Best Practices:** `llm.md` includes detailed best practices for geocoding, addressing issues like province/city center discrepancies and ancient city names, including a "Coordinate Override" fallback.
 - **Client-side Cache-busting:** For Replit development, a timestamp-based cache-busting mechanism is appended to URLs to ensure fresh previews.
 - **Static Deployment:** Designed for easy deployment to GitHub Pages, serving static files directly without a backend.
