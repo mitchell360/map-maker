@@ -19,7 +19,14 @@ The tool uses a hybrid architecture with a static frontend and a Flask backend f
 - **Travel Line and Time Overlay:** Displays color-coded travel paths (purple gradient), numbered circular badges along paths, and a travel time information box.
 - **Route Type Selector:** "Land Only" uses only Roman Roads, "Use Water" uses both Roman Roads AND itiner-e Sea Lanes for optimal mixed routing.
 - **Transport Mode Selector:** 4 historical land travel speed options: Walking (4 km/h), Ox cart (2 km/h), Pack animal (4.5 km/h), Horse courier (6 km/h).
-- **Toggleable Overlays:** Includes Country Borders, Roman Roads (14,993 segments), Sea Lanes (524 segments), and Mendeley Sailing Routes.
+- **Custom Collapsible Layer Control Panel:** Replaces default Leaflet control with organized categories:
+  - **Base Map:** Ancient Terrain (DARE Background + Hillshade), Ancient Full (DARE with roads), Modern Clean (CartoDB), Modern Detailed (OSM)
+  - **Your Journey:** Route & Travel Time toggle
+  - **Roman Infrastructure:** Roman Roads, Sea Lanes, Aqueducts
+  - **Settlements:** Ancient Cities, Fortifications
+  - **Political:** Roman Provinces, Modern Borders
+  - **Water Features:** Rivers, Lakes, Sailing Routes
+- **Lazy Loading Overlays:** Ancient world data layers load on-demand when toggled to minimize initial load time.
 - **Map Title:** Optional `title` URL parameter displays a centered title above the map.
 - **Loading Progress Overlay:** Shows real-time status during map initialization, geocoding, and route calculation.
 
@@ -44,6 +51,13 @@ The tool uses a hybrid architecture with a static frontend and a Flask backend f
 - `roman_roads.ndjson`: itiner-e Roman road network data (16,554 segments, 39MB).
 - `country_borders.geojson`: Natural Earth country boundary data.
 - `sailing_routes.json`: Mendeley ancient Mediterranean sailing routes (58 ports, for overlay display).
+- `data/`: Ancient world overlay data files (lazy-loaded):
+  - `places.geojson`: DARE ancient cities/settlements with Latin/modern names.
+  - `provinces.geojson`: Roman province boundaries.
+  - `rivers.geojson`: Ancient river network.
+  - `lakes.geojson`: Ancient lakes and bodies of water.
+  - `aqueducts.geojson`: Roman aqueduct locations.
+  - `fortifications.geojson`: Roman fortifications and military sites.
 
 ## External Dependencies
 - **Mapping Library:** Leaflet.js (CDN-hosted)
