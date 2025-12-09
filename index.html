@@ -725,6 +725,10 @@ function hideLoading(){
   
   const map=L.map('map',{zoomControl:true}).setView([20,0],2);
   
+  // Create custom pane for journey markers (user's locations) with high z-index
+  map.createPane('journeyPane');
+  map.getPane('journeyPane').style.zIndex=650; // Above markers (600) and overlays
+  
   // Base map layers
   const dareBackground=L.tileLayer('https://klokantech.github.io/dare-raster-tiles/background/{z}/{x}/{y}.png',{minZoom:0,maxZoom:11,attribution:'© DARE Background'});
   const dareHillshade=L.tileLayer('https://klokantech.github.io/dare-raster-tiles/hillshade/{z}/{x}/{y}.png',{minZoom:0,maxZoom:11,opacity:0.4});
@@ -770,10 +774,7 @@ function hideLoading(){
   const ancientPlaces=L.layerGroup();  // All cities (places_medium)
   const majorCities=L.layerGroup();    // Major cities only (places_low)
   const famousCities=L.layerGroup();   // Famous cities only (curated 50)
-  const ancientProvinces=L.layerGroup();
-  const provinces60BC=L.layerGroup();
-  const provinces117AD=L.layerGroup();
-  const provinces200AD=L.layerGroup();
+  const romanProvinces=L.layerGroup();  // Provinces with names
   const ancientRivers=L.layerGroup();
   const ancientLakes=L.layerGroup();
   const ancientAqueducts=L.layerGroup();
@@ -783,12 +784,9 @@ function hideLoading(){
   
   // Track which layers are loaded
   const layerLoadState={
-    places:false,majorCities:false,famousCities:false,provinces:false,provinces60bc:false,provinces117ad:false,provinces200ad:false,
+    places:false,majorCities:false,famousCities:false,provinces:false,
     rivers:false,lakes:false,aqueducts:false,fortifications:false,bridges:false,seas:false
   };
-  
-  // Current province period (60BC, 117AD, 200AD)
-  let currentProvincePeriod='117ad';
   
   // Label language setting
   let labelLanguage='latin'; // 'latin', 'modern', 'greek'
@@ -1011,25 +1009,6 @@ function hideLoading(){
       }).catch(e=>console.error('Places load error:',e));
   }
   
-  // Load Ancient Provinces
-  function loadAncientProvinces(){
-    if(layerLoadState.provinces)return;
-    layerLoadState.provinces=true;
-    fetch('data/provinces.geojson')
-      .then(r=>r.json())
-      .then(data=>{
-        const layer=L.geoJSON(data,{
-          style:{color:'#7c3aed',weight:2,opacity:0.7,fillOpacity:0.05,fillColor:'#7c3aed'},
-          onEachFeature:(f,layer)=>{
-            layer.bindPopup(`<b>${f.properties.name||'Province'}</b>`);
-          }
-        });
-        ancientProvinces.clearLayers();
-        ancientProvinces.addLayer(layer);
-        console.log(`Loaded ${data.features.length} provinces`);
-      }).catch(e=>console.error('Provinces load error:',e));
-  }
-  
   // Load Rivers
   function loadAncientRivers(){
     if(layerLoadState.rivers)return;
@@ -1221,16 +1200,31 @@ function hideLoading(){
       .then(data=>{
         const layer=L.geoJSON(data,{
           pointToLayer:(f,latlng)=>{
-            const name=labelLanguage==='latin'?f.properties.latin:f.properties.modern;
+            const p=f.properties;
+            const displayName=p.latin||p.modern||'Sea';
             return L.marker(latlng,{
               icon:L.divIcon({
                 className:'sea-label',
-                html:`<div style="font-family:Georgia,serif;font-style:italic;font-size:14px;color:#0369a1;text-shadow:1px 1px 2px white,-1px -1px 2px white,1px -1px 2px white,-1px 1px 2px white;white-space:nowrap">${name}</div>`,
+                html:`<div style="font-family:Georgia,serif;font-style:italic;font-size:14px;color:#0369a1;text-shadow:1px 1px 2px white,-1px -1px 2px white,1px -1px 2px white,-1px 1px 2px white;white-space:nowrap;cursor:pointer">${displayName}</div>`,
                 iconSize:[0,0],
                 iconAnchor:[0,0]
               }),
-              interactive:false
+              interactive:true
             });
+          },
+          onEachFeature:(f,layer)=>{
+            const p=f.properties;
+            const latinName=p.latin||'—';
+            const modernName=p.modern||'—';
+            layer.bindPopup(`
+              <div style="min-width:120px">
+                <div style="font-size:15px;font-weight:600;color:#0369a1;font-style:italic">${latinName}</div>
+                <div style="color:#6b7280;font-size:12px;margin-top:4px">
+                  <div><span style="color:#374151;font-weight:500">Latin:</span> ${latinName}</div>
+                  <div><span style="color:#374151;font-weight:500">Modern:</span> ${modernName}</div>
+                </div>
+              </div>
+            `);
           }
         });
         ancientSeas.clearLayers();
@@ -1239,48 +1233,49 @@ function hideLoading(){
       }).catch(e=>console.error('Seas load error:',e));
   }
   
-  // Load Province boundaries for specific time period
-  function loadProvinces(period){
-    const stateKey='provinces'+period;
-    if(layerLoadState[stateKey])return;
-    layerLoadState[stateKey]=true;
+  // Load Province boundaries (with names from klokantech dataset)
+  function loadProvinces(){
+    if(layerLoadState.provinces)return;
+    layerLoadState.provinces=true;
     
-    const periodFiles={
-      '60bc':'data/provinces_60bc.geojson',
-      '117ad':'data/provinces_117ad.geojson',
-      '200ad':'data/provinces_200ad.geojson'
-    };
-    
-    const targetLayer={'60bc':provinces60BC,'117ad':provinces117AD,'200ad':provinces200AD}[period];
-    
-    fetch(periodFiles[period])
+    // Load province boundaries (with names)
+    fetch('data/provinces_klokan.geojson')
       .then(r=>r.json())
       .then(data=>{
         const layer=L.geoJSON(data,{
           style:{color:'#7c3aed',weight:2,opacity:0.7,fillOpacity:0.08,fillColor:'#7c3aed'},
           onEachFeature:(f,layer)=>{
             const p=f.properties;
-            layer.bindPopup(`<b>${p.name||p.NAME||'Province'}</b>`);
+            const name=p.name||'Province';
+            layer.bindPopup(`<div style="min-width:120px"><div style="font-size:15px;font-weight:600;color:#1f2937">${name}</div><div style="color:#6b7280;font-size:11px;margin-top:4px">Roman Province</div></div>`);
           }
         });
-        targetLayer.clearLayers();
-        targetLayer.addLayer(layer);
-        console.log(`Loaded ${data.features.length} provinces (${period})`);
-      }).catch(e=>console.error(`Provinces ${period} load error:`,e));
-  }
-  
-  // Switch province period
-  function switchProvincePeriod(period){
-    // Remove all province layers from map
-    map.removeLayer(provinces60BC);
-    map.removeLayer(provinces117AD);
-    map.removeLayer(provinces200AD);
+        romanProvinces.clearLayers();
+        romanProvinces.addLayer(layer);
+        console.log(`Loaded ${data.features.length} provinces`);
+      }).catch(e=>console.error('Provinces load error:',e));
     
-    // Add the selected period
-    currentProvincePeriod=period;
-    const targetLayer={'60bc':provinces60BC,'117ad':provinces117AD,'200ad':provinces200AD}[period];
-    targetLayer.addTo(map);
-    loadProvinces(period);
+    // Also load province labels for permanent display
+    fetch('data/provinces_labels.geojson')
+      .then(r=>r.json())
+      .then(data=>{
+        const labelLayer=L.geoJSON(data,{
+          pointToLayer:(f,latlng)=>{
+            const name=f.properties.name||'';
+            return L.marker(latlng,{
+              icon:L.divIcon({
+                className:'province-label',
+                html:`<div style="font-family:Georgia,serif;font-size:11px;color:#5b21b6;text-shadow:1px 1px 1px white,-1px -1px 1px white;white-space:nowrap;font-weight:500">${name}</div>`,
+                iconSize:[0,0],
+                iconAnchor:[0,0]
+              }),
+              interactive:false
+            });
+          }
+        });
+        romanProvinces.addLayer(labelLayer);
+        console.log(`Loaded ${data.features.length} province labels`);
+      }).catch(e=>console.error('Province labels load error:',e));
   }
   
   // Load layers when overlay is added
@@ -1291,10 +1286,7 @@ function hideLoading(){
     if(e.layer===ancientPlaces)loadAncientPlaces();
     if(e.layer===majorCities)loadMajorCities();
     if(e.layer===famousCities)loadFamousCities();
-    if(e.layer===ancientProvinces)loadAncientProvinces();
-    if(e.layer===provinces60BC)loadProvinces('60bc');
-    if(e.layer===provinces117AD)loadProvinces('117ad');
-    if(e.layer===provinces200AD)loadProvinces('200ad');
+    if(e.layer===romanProvinces)loadProvinces();
     if(e.layer===ancientRivers)loadAncientRivers();
     if(e.layer===ancientLakes)loadAncientLakes();
     if(e.layer===ancientAqueducts)loadAncientAqueducts();
@@ -1364,14 +1356,7 @@ function hideLoading(){
             <span class="layer-section-arrow">▼</span>
           </div>
           <div class="layer-section-items">
-            <div class="layer-item">
-              <input type="checkbox" id="layer-provinces"><label for="layer-provinces">Roman Provinces</label>
-              <select id="province-period" class="layer-dropdown">
-                <option value="60bc">60 BC</option>
-                <option value="117ad" selected>117 AD</option>
-                <option value="200ad">200 AD</option>
-              </select>
-            </div>
+            <div class="layer-item"><input type="checkbox" id="layer-provinces"><label for="layer-provinces">Roman Provinces</label></div>
             <div class="layer-item"><input type="checkbox" id="layer-borders"><label for="layer-borders">Modern Borders</label></div>
           </div>
         </div>
@@ -1411,6 +1396,7 @@ function hideLoading(){
       'layer-major-cities':majorCities,
       'layer-all-cities':ancientPlaces,
       'layer-forts':ancientFortifications,
+      'layer-provinces':romanProvinces,
       'layer-borders':countryBorders,
       'layer-rivers':ancientRivers,
       'layer-lakes':ancientLakes,
@@ -1429,26 +1415,6 @@ function hideLoading(){
             map.removeLayer(layer);
           }
         });
-      }
-    });
-    
-    // Province layer with period selector
-    const provincesCheckbox=panel.querySelector('#layer-provinces');
-    const provincePeriodSelect=panel.querySelector('#province-period');
-    
-    provincesCheckbox.addEventListener('change',function(){
-      if(this.checked){
-        switchProvincePeriod(provincePeriodSelect.value);
-      }else{
-        map.removeLayer(provinces60BC);
-        map.removeLayer(provinces117AD);
-        map.removeLayer(provinces200AD);
-      }
-    });
-    
-    provincePeriodSelect.addEventListener('change',function(){
-      if(provincesCheckbox.checked){
-        switchProvincePeriod(this.value);
       }
     });
     
@@ -1535,9 +1501,9 @@ function hideLoading(){
     chronoNames.push(locationName);
     const html=lines.map(l=>'<span class="popup-line">'+l+'</span>').join('');
     
-    const mk=L.marker([coord.lat,coord.lon],{icon:blueIcon})
+    const mk=L.marker([coord.lat,coord.lon],{icon:blueIcon,pane:'journeyPane'})
       .addTo(map)
-      .bindTooltip(locationName,{permanent:true,direction:'top',className:'marker-label'})
+      .bindTooltip(locationName,{permanent:true,direction:'top',className:'marker-label',pane:'journeyPane'})
       .on('click',()=>openDrawer(html));
     
     allMarkers.push(mk);
@@ -1563,9 +1529,9 @@ function hideLoading(){
     const locationName=lines[0]||q;
     const html=lines.map(l=>'<span class="popup-line">'+l+'</span>').join('');
     
-    const mk=L.marker([coord.lat,coord.lon],{icon:redIcon})
+    const mk=L.marker([coord.lat,coord.lon],{icon:redIcon,pane:'journeyPane'})
       .addTo(map)
-      .bindTooltip(locationName,{permanent:true,direction:'top',className:'marker-label-reference'})
+      .bindTooltip(locationName,{permanent:true,direction:'top',className:'marker-label-reference',pane:'journeyPane'})
       .on('click',()=>openDrawer(html));
     
     allMarkers.push(mk);
