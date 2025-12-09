@@ -256,14 +256,13 @@ async function loadLocalCoords(){
   }catch(e){console.log('Local coordinates not available, using Nominatim only');}
 }
 
-// Load sailing routes and build graph for sea routing
+// Load sailing routes and build graph for sea routing (kept for overlay display only)
 async function loadSailingGraph(){
   try{
     const r=await fetch('sailing_routes.json');
     if(r.ok){
       const data=await r.json();
       sailingPorts=data.ports||{};
-      // Build adjacency list with distances
       sailingGraph={};
       for(const portName of Object.keys(sailingPorts)){
         sailingGraph[portName]=[];
@@ -276,12 +275,239 @@ async function loadSailingGraph(){
           const toP=sailingPorts[to];
           const dist=haversineDistance({lat:fromP.lat,lon:fromP.lon},{lat:toP.lat,lon:toP.lon});
           sailingGraph[from].push({to,dist});
-          sailingGraph[to].push({to:from,dist}); // Bidirectional
+          sailingGraph[to].push({to:from,dist});
         }
       }
-      console.log(`Loaded ${Object.keys(sailingPorts).length} sailing ports, ${(data.routes||[]).length} routes`);
+      console.log(`Loaded ${Object.keys(sailingPorts).length} sailing ports`);
     }
   }catch(e){console.log('Sailing routes not available');}
+}
+
+// ============================================
+// ITINER-E GRAPH-BASED ROUTING
+// ============================================
+let itinereGraph=null;
+let itinereAdjLand=null;  // Land-only adjacency
+let itinereAdjMixed=null; // Land + sea adjacency
+
+async function loadItinereGraph(){
+  try{
+    console.log('Loading itiner-e routing graph...');
+    const r=await fetch('itinere_graph.json');
+    if(!r.ok)throw new Error('Failed to fetch');
+    itinereGraph=await r.json();
+    
+    // Build adjacency lists for routing
+    const nodes=itinereGraph.nodes;
+    const edges=itinereGraph.edges;
+    
+    // Initialize adjacency arrays
+    itinereAdjLand=Array(nodes.length).fill(null).map(()=>[]);
+    itinereAdjMixed=Array(nodes.length).fill(null).map(()=>[]);
+    
+    for(let i=0;i<edges.length;i++){
+      const e=edges[i];
+      const edgeData={to:e.to,length:e.length,type:e.type,idx:i};
+      const edgeDataReverse={to:e.from,length:e.length,type:e.type,idx:i};
+      
+      // Mixed adjacency includes all edges
+      itinereAdjMixed[e.from].push(edgeData);
+      itinereAdjMixed[e.to].push(edgeDataReverse);
+      
+      // Land adjacency excludes sea lanes (includes land + river)
+      if(e.type!=='sea'){
+        itinereAdjLand[e.from].push(edgeData);
+        itinereAdjLand[e.to].push(edgeDataReverse);
+      }
+    }
+    
+    console.log(`Loaded itiner-e graph: ${nodes.length} nodes, ${edges.length} edges`);
+    return true;
+  }catch(e){
+    console.error('Failed to load itiner-e graph:',e);
+    return false;
+  }
+}
+
+// Haversine distance in km
+function haversineKm(lat1,lon1,lat2,lon2){
+  const R=6371;
+  const dLat=(lat2-lat1)*Math.PI/180;
+  const dLon=(lon2-lon1)*Math.PI/180;
+  const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+// Find nearest node to a coordinate
+function snapToNearestNode(lat,lon){
+  if(!itinereGraph)return null;
+  const nodes=itinereGraph.nodes;
+  const cellSize=itinereGraph.cellSize||0.25;
+  const spatialIndex=itinereGraph.spatialIndex;
+  
+  // Check cells around the point
+  let bestNode=null;
+  let bestDist=Infinity;
+  const maxSearchRadius=3; // Search up to 3 cells away (~75km)
+  
+  for(let dCell=0;dCell<=maxSearchRadius;dCell++){
+    const cellLat=Math.floor(lat/cellSize);
+    const cellLon=Math.floor(lon/cellSize);
+    
+    // Expand search in a ring pattern
+    for(let dy=-dCell;dy<=dCell;dy++){
+      for(let dx=-dCell;dx<=dCell;dx++){
+        if(dCell>0&&Math.abs(dy)<dCell&&Math.abs(dx)<dCell)continue; // Skip inner cells already checked
+        
+        const cellKey=`${cellLat+dy},${cellLon+dx}`;
+        const edgeIndices=spatialIndex[cellKey];
+        if(!edgeIndices)continue;
+        
+        // Check nodes of edges in this cell
+        for(const edgeIdx of edgeIndices){
+          const edge=itinereGraph.edges[edgeIdx];
+          // Check both endpoints
+          for(const nodeId of [edge.from,edge.to]){
+            const node=nodes[nodeId];
+            const dist=haversineKm(lat,lon,node.lat,node.lon);
+            if(dist<bestDist){
+              bestDist=dist;
+              bestNode={id:nodeId,lat:node.lat,lon:node.lon,dist};
+            }
+          }
+        }
+      }
+    }
+    
+    // If found a node within reasonable distance, stop expanding
+    if(bestNode&&bestDist<50)break;
+  }
+  
+  return bestNode;
+}
+
+// Dijkstra shortest path on itiner-e graph
+function dijkstraItinere(startId,endId,useMixed=true){
+  const adj=useMixed?itinereAdjMixed:itinereAdjLand;
+  if(!adj||startId===null||endId===null)return null;
+  
+  const nodes=itinereGraph.nodes;
+  const n=nodes.length;
+  
+  const dist=new Float64Array(n).fill(Infinity);
+  const prev=new Int32Array(n).fill(-1);
+  const prevEdge=new Int32Array(n).fill(-1);
+  const visited=new Uint8Array(n);
+  
+  // Simple priority queue using array (sufficient for this graph size)
+  const pq=[{id:startId,d:0}];
+  dist[startId]=0;
+  
+  while(pq.length>0){
+    // Get minimum
+    let minIdx=0;
+    for(let i=1;i<pq.length;i++){
+      if(pq[i].d<pq[minIdx].d)minIdx=i;
+    }
+    const {id:current,d:currentDist}=pq.splice(minIdx,1)[0];
+    
+    if(visited[current])continue;
+    visited[current]=1;
+    
+    if(current===endId)break;
+    
+    for(const edge of adj[current]){
+      if(visited[edge.to])continue;
+      const newDist=dist[current]+edge.length;
+      if(newDist<dist[edge.to]){
+        dist[edge.to]=newDist;
+        prev[edge.to]=current;
+        prevEdge[edge.to]=edge.idx;
+        pq.push({id:edge.to,d:newDist});
+      }
+    }
+  }
+  
+  if(dist[endId]===Infinity)return null;
+  
+  // Reconstruct path with edge geometries
+  const pathCoords=[];
+  const edgeTypes=[];
+  let current=endId;
+  const edgeSequence=[];
+  
+  while(prev[current]!==-1){
+    edgeSequence.unshift({from:prev[current],to:current,edgeIdx:prevEdge[current]});
+    current=prev[current];
+  }
+  
+  // Build polyline from edge coordinates
+  for(const seg of edgeSequence){
+    const edge=itinereGraph.edges[seg.edgeIdx];
+    let coords=edge.coords;
+    
+    // Reverse if we're going backwards on this edge
+    if(edge.from!==seg.from){
+      coords=[...coords].reverse();
+    }
+    
+    // Add coordinates (skip first point if not first segment to avoid duplicates)
+    const startIdx=pathCoords.length===0?0:1;
+    for(let i=startIdx;i<coords.length;i++){
+      pathCoords.push(coords[i]);
+    }
+    edgeTypes.push(edge.type);
+  }
+  
+  // Add end node if path is empty
+  if(pathCoords.length===0){
+    const endNode=nodes[endId];
+    pathCoords.push([endNode.lat,endNode.lon]);
+  }
+  
+  return{
+    coords:pathCoords,
+    distance:dist[endId]*1000, // Convert to meters for compatibility
+    edgeTypes,
+    hasSeaSegments:edgeTypes.includes('sea')
+  };
+}
+
+// Get route using itiner-e graph (replaces OSRM)
+async function getItinereRoute(start,end,useMixed=true){
+  if(!itinereGraph){
+    console.warn('Itiner-e graph not loaded');
+    return null;
+  }
+  
+  const startNode=snapToNearestNode(start.lat,start.lon);
+  const endNode=snapToNearestNode(end.lat,end.lon);
+  
+  if(!startNode||!endNode){
+    console.warn('Could not snap to itiner-e network');
+    return null;
+  }
+  
+  // Warn if snap distance is too far (>50km)
+  if(startNode.dist>50||endNode.dist>50){
+    console.warn(`Large snap distance: start=${startNode.dist.toFixed(1)}km, end=${endNode.dist.toFixed(1)}km`);
+  }
+  
+  const result=dijkstraItinere(startNode.id,endNode.id,useMixed);
+  if(!result)return null;
+  
+  // Add connector legs from actual start/end to snapped nodes
+  const fullCoords=[[start.lat,start.lon],...result.coords,[end.lat,end.lon]];
+  
+  // Add connector distances
+  const connectorDist=(startNode.dist+endNode.dist)*1000;
+  
+  return{
+    distance:result.distance+connectorDist,
+    geometry:{type:'LineString',coordinates:fullCoords.map(c=>[c[1],c[0]])}, // [lon,lat] for GeoJSON
+    hasSeaSegments:result.hasSeaSegments,
+    edgeTypes:result.edgeTypes
+  };
 }
 
 // Find nearest port to a coordinate
@@ -451,7 +677,11 @@ function hideLoading(){
   // Load local coordinates dictionary first (for fast geocoding)
   await loadLocalCoords();
   
-  // Load sailing routes graph for sea routing
+  // Load itiner-e routing graph
+  updateLoading('Loading routing network...');
+  await loadItinereGraph();
+  
+  // Load sailing routes for overlay display (kept for Mendeley overlay, not routing)
   await loadSailingGraph();
   
   const map=L.map('map',{zoomControl:true}).setView([20,0],2);
@@ -815,16 +1045,33 @@ function hideLoading(){
     return null;
   }
   
+  // Route mode state - shared between initial calculation and UI updates
+  let currentRouteMode='land'; // 'land' or 'water'
+  const routeCache={land:[],water:[]}; // Cache routes for both modes
+  
   // Draw travel paths between consecutive chronological locations with different colors
+  // Now uses itiner-e graph-based routing instead of OSRM
   updateLoading('Calculating travel routes...',`Preparing ${chronoCoords.length-1} route segments`);
   let totalDistance=0;
   const legDistances=[];
   const legColors=[];
+  const legRouteInfo=[]; // Store route info for each leg (for UI updates)
+  
   for(let i=0;i<chronoCoords.length-1;i++){
     updateLoading('Calculating travel routes...',`Route ${i+1} of ${chronoCoords.length-1}: ${chronoNames[i]} → ${chronoNames[i+1]}`);
-    const route=await getWalkingRoute(chronoCoords[i],chronoCoords[i+1]);
+    
+    // Calculate both land-only and mixed routes for this leg
+    const landRoute=await getItinereRoute(chronoCoords[i],chronoCoords[i+1],false); // Land only
+    const mixedRoute=await getItinereRoute(chronoCoords[i],chronoCoords[i+1],true);  // Land + sea
+    
+    routeCache.land.push(landRoute);
+    routeCache.water.push(mixedRoute);
+    
+    // Use current route mode for initial display
+    const route=currentRouteMode==='water'?mixedRoute:landRoute;
     const segmentColor=purpleColors[i%purpleColors.length];
     legColors.push(segmentColor);
+    
     if(route&&route.geometry){
       const latlngs=route.geometry.coordinates.map(c=>[c[1],c[0]]);
       
@@ -860,10 +1107,19 @@ function hideLoading(){
         }
       }
       
+      // Store route info for travel time calculations
+      legRouteInfo.push({
+        landDist:landRoute?landRoute.distance:0,
+        mixedDist:mixedRoute?mixedRoute.distance:0,
+        hasSea:mixedRoute?mixedRoute.hasSeaSegments:false,
+        landRoute,mixedRoute
+      });
+      
       totalDistance+=route.distance;
       legDistances.push(route.distance);
     }else{
       legDistances.push(0);
+      legRouteInfo.push({landDist:0,mixedDist:0,hasSea:false,landRoute:null,mixedRoute:null});
     }
   }
   
@@ -877,87 +1133,6 @@ function hideLoading(){
       const transportSpeeds={walking:4,pack:4.5,horse:6,oxcart:2};
       const SAILING_SPEED_KMH=7.4; // 4 knots in km/h
       let currentTransport='walking';
-      let currentRouteMode='land'; // 'land' or 'water'
-      
-      // Mediterranean bounding box for water crossing detection
-      const WATER_BOUNDS={minLat:30,maxLat:46,minLon:-6,maxLon:36};
-      
-      // Check if a path segment likely crosses water (Mediterranean)
-      // OSRM includes modern ferries, so a LOW ratio (route close to straight-line) indicates water crossing
-      // True land-only routes going around water would have HIGH ratios (1.5-3x straight-line)
-      function isWaterCrossing(start,end,routeDist){
-        const straightDist=haversineDistance(start,end);
-        
-        // Check if midpoint is within Mediterranean basin
-        const midLat=(start.lat+end.lat)/2;
-        const midLon=(start.lon+end.lon)/2;
-        if(midLat<WATER_BOUNDS.minLat||midLat>WATER_BOUNDS.maxLat)return false;
-        if(midLon<WATER_BOUNDS.minLon||midLon>WATER_BOUNDS.maxLon)return false;
-        
-        // Must be at least 100km to consider water crossing (ferries are typically for longer distances)
-        if(straightDist<100000)return false;
-        
-        // Key heuristic: OSRM uses ferries, so a LOW ratio indicates ferry/water usage
-        // - Ratio < 1.35: OSRM took a near-direct path (likely using ferries)
-        // - Ratio > 1.5: OSRM routed around (true land path)
-        // Normal overland routes are typically 1.4-1.6x straight-line due to road curvature
-        const ratio=routeDist>0?(routeDist/straightDist):1.0;
-        return ratio<1.35;
-      }
-      
-      // Analyze each leg for water crossings and draw water routes using sailing graph
-      const legWaterInfo=[];
-      for(let i=0;i<chronoCoords.length-1;i++){
-        const start=chronoCoords[i];
-        const end=chronoCoords[i+1];
-        const routeDist=legDistances[i]||0;
-        const straightDist=haversineDistance(start,end);
-        const isWater=isWaterCrossing(start,end,routeDist);
-        
-        // Try to get proper sea route using sailing routes graph
-        let seaRoute=null;
-        let seaRouteDist=straightDist;
-        if(isWater){
-          seaRoute=getSeaRoute(start,end);
-          if(seaRoute){
-            seaRouteDist=seaRoute.distance;
-          }
-        }
-        
-        // Draw water crossing route (dashed cyan) for detected sea segments
-        if(isWater){
-          if(seaRoute&&seaRoute.path.length>1){
-            // Draw proper sea route following port graph
-            const waterLatlngs=seaRoute.path.map(p=>[p.lat,p.lon]);
-            // White background for visibility
-            L.polyline(waterLatlngs,{color:'#ffffff',weight:6,opacity:0.9}).addTo(travelLineAndTime);
-            // Cyan dashed line for water route
-            L.polyline(waterLatlngs,{color:'#06b6d4',weight:4,opacity:0.9,dashArray:'12,8'}).addTo(travelLineAndTime);
-            // Add anchor icon at midpoint of sea path
-            const midIdx=Math.floor(seaRoute.path.length/2);
-            const midPt=seaRoute.path[midIdx];
-            const anchorHtml='<div style="width:24px;height:24px;background:#06b6d4;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 2px 6px rgba(0,0,0,0.3),0 0 0 2px #fff">⚓</div>';
-            L.marker([midPt.lat,midPt.lon],{
-              icon:L.divIcon({className:'water-marker',html:anchorHtml,iconSize:[24,24],iconAnchor:[12,12]}),
-              interactive:false
-            }).addTo(travelLineAndTime);
-          }else{
-            // Fallback to straight line if no graph route available
-            const waterLatlngs=[[start.lat,start.lon],[end.lat,end.lon]];
-            L.polyline(waterLatlngs,{color:'#ffffff',weight:6,opacity:0.9}).addTo(travelLineAndTime);
-            L.polyline(waterLatlngs,{color:'#06b6d4',weight:4,opacity:0.9,dashArray:'12,8'}).addTo(travelLineAndTime);
-            const midLat=(start.lat+end.lat)/2;
-            const midLon=(start.lon+end.lon)/2;
-            const anchorHtml='<div style="width:24px;height:24px;background:#06b6d4;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 2px 6px rgba(0,0,0,0.3),0 0 0 2px #fff">⚓</div>';
-            L.marker([midLat,midLon],{
-              icon:L.divIcon({className:'water-marker',html:anchorHtml,iconSize:[24,24],iconAnchor:[12,12]}),
-              interactive:false
-            }).addTo(travelLineAndTime);
-          }
-        }
-        
-        legWaterInfo.push({isWater,straightDist,routeDist:routeDist||straightDist,seaRouteDist});
-      }
       
       // Calculate travel time based on distance and transport mode
       const formatTime=(distanceMeters,speedKmH)=>{
@@ -979,29 +1154,63 @@ function hideLoading(){
       travelTimeDiv.style.display='none';
       document.body.appendChild(travelTimeDiv);
       
+      // Function to redraw routes based on current mode
+      function redrawRoutes(){
+        // Clear existing travel lines (except markers)
+        travelLineAndTime.eachLayer(layer=>{
+          if(layer instanceof L.Polyline||layer instanceof L.Circle){
+            travelLineAndTime.removeLayer(layer);
+          }
+        });
+        
+        // Redraw routes for current mode
+        for(let i=0;i<legRouteInfo.length;i++){
+          const info=legRouteInfo[i];
+          const route=currentRouteMode==='water'?info.mixedRoute:info.landRoute;
+          const segmentColor=legColors[i];
+          
+          if(route&&route.geometry){
+            const latlngs=route.geometry.coordinates.map(c=>[c[1],c[0]]);
+            
+            // Draw main path
+            L.polyline(latlngs,{color:'#ffffff',weight:5,opacity:0.9}).addTo(travelLineAndTime);
+            L.polyline(latlngs,{color:segmentColor,weight:3,opacity:0.95}).addTo(travelLineAndTime);
+          }
+        }
+      }
+      
       // Update travel time display based on current transport mode and route mode
       function updateTravelTimeDisplay(){
         const landSpeed=transportSpeeds[currentTransport];
         
-        // Calculate totals based on route mode
+        // Calculate totals based on route mode using new legRouteInfo
         let totalLandDist=0,totalWaterDist=0,totalLandHours=0,totalWaterHours=0;
         const legDetails=[];
         
-        for(let i=0;i<legWaterInfo.length;i++){
-          const info=legWaterInfo[i];
-          const legDist=info.routeDist||info.straightDist;
+        for(let i=0;i<legRouteInfo.length;i++){
+          const info=legRouteInfo[i];
           
-          if(currentRouteMode==='water'&&info.isWater){
-            // Use sailing for water crossings (use proper sea route distance if available)
-            const waterDist=info.seaRouteDist||info.straightDist;
-            totalWaterDist+=waterDist;
-            totalWaterHours+=waterDist/1000/SAILING_SPEED_KMH;
-            legDetails.push({type:'water',dist:waterDist,speed:SAILING_SPEED_KMH,name:`${chronoNames[i]} → ${chronoNames[i+1]}`});
+          if(currentRouteMode==='water'){
+            // Use mixed route (may include sea segments)
+            const legDist=info.mixedDist||0;
+            if(info.hasSea){
+              // Estimate sea portion (simplified - could be enhanced with edge-level breakdown)
+              totalWaterDist+=legDist*0.6; // Approximate sea portion
+              totalLandDist+=legDist*0.4;
+              totalWaterHours+=(legDist*0.6)/1000/SAILING_SPEED_KMH;
+              totalLandHours+=(legDist*0.4)/1000/landSpeed;
+              legDetails.push({type:'mixed',dist:legDist,speed:landSpeed,name:`${chronoNames[i]} → ${chronoNames[i+1]}`,hasSea:true});
+            }else{
+              totalLandDist+=legDist;
+              totalLandHours+=legDist/1000/landSpeed;
+              legDetails.push({type:'land',dist:legDist,speed:landSpeed,name:`${chronoNames[i]} → ${chronoNames[i+1]}`,hasSea:false});
+            }
           }else{
-            // Land travel
+            // Land only mode
+            const legDist=info.landDist||0;
             totalLandDist+=legDist;
             totalLandHours+=legDist/1000/landSpeed;
-            legDetails.push({type:'land',dist:legDist,speed:landSpeed,name:`${chronoNames[i]} → ${chronoNames[i+1]}`});
+            legDetails.push({type:'land',dist:legDist,speed:landSpeed,name:`${chronoNames[i]} → ${chronoNames[i+1]}`,hasSea:false});
           }
         }
         
@@ -1029,7 +1238,7 @@ function hideLoading(){
           if(lDays>0||lWeeks===0)legTimeStr+=`${lDays}d`;
           
           const segmentNum=i+1;
-          const typeIcon=leg.type==='water'?'<span style="color:#0891b2" title="Sea route">⚓</span>':'';
+          const typeIcon=leg.hasSea?'<span style="color:#0891b2" title="Includes sea route">⚓</span>':'';
           const segmentLabel=`<span style="display:inline-block;width:18px;height:18px;background:#ffffff;border-radius:50%;text-align:center;line-height:18px;font-size:10px;font-weight:700;border:2px solid ${legColors[i]||'#6b7280'};margin-right:8px;vertical-align:middle;">${segmentNum}</span>`;
           legsHtml+=`<div>${segmentLabel}${typeIcon}${leg.name}: <span style="color:#6b7280;">${legTimeStr} (${distKm} km)</span></div>`;
         }
@@ -1062,13 +1271,11 @@ function hideLoading(){
         }
         
         // Route legend showing line styles
-        const hasWaterCrossings=legWaterInfo.some(info=>info.isWater);
+        const hasWaterCrossings=currentRouteMode==='water'&&legRouteInfo.some(info=>info.hasSea);
         let legendHtml='';
         if(hasWaterCrossings){
           legendHtml=`<div style="margin-top:8px;padding-top:8px;border-top:1px solid #e5e7eb;font-size:11px;color:#6b7280">
-            <strong>Map Legend:</strong>
-            <span style="margin-left:8px"><span style="display:inline-block;width:20px;height:3px;background:#7c3aed;vertical-align:middle;margin-right:4px"></span>OSRM Route</span>
-            <span style="margin-left:8px"><span style="display:inline-block;width:20px;height:3px;background:#06b6d4;border-top:2px dashed #06b6d4;vertical-align:middle;margin-right:4px"></span>Sea Crossing</span>
+            <strong>Note:</strong> Route uses itiner-e Roman roads and ancient sea lanes for mixed land/water travel.
           </div>`;
         }
         
@@ -1088,6 +1295,7 @@ function hideLoading(){
         travelTimeDiv.querySelectorAll('.route-btn').forEach(btn=>{
           btn.addEventListener('click',function(){
             currentRouteMode=this.dataset.route;
+            redrawRoutes();
             updateTravelTimeDisplay();
           });
         });
