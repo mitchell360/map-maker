@@ -464,11 +464,17 @@ Please provide complete location details.
 
 ### Route Type Selector
 When "Travel Line and Time" overlay is enabled, you can choose how the journey handles water crossings:
-- **Land Only** - Routes go around bodies of water (uses OSRM road routing)
-- **Use Water** - Routes can cross sea via sailing (detects Mediterranean crossings, calculates at 4 knots/7.4 km/h)
+- **Land Only** - Uses OSRM road routing (note: OSRM includes modern ferries, so displayed distances reflect ferry-assisted routes)
+- **Use Water** - Detects Mediterranean crossings and calculates sailing time at 4 knots (7.4 km/h)
+
+**Water Crossing Detection:**
+The system detects water crossings by analyzing the OSRM route vs. straight-line distance ratio. Since OSRM includes modern ferries, a LOW ratio (< 1.35) indicates the route used a near-direct ferry crossing. True land-only routes going around water bodies have higher ratios (1.5-3x). Detection requires:
+- Segment midpoint within Mediterranean basin (lat 30-46, lon -6 to 36)
+- Straight-line distance > 100 km
+- OSRM route/straight-line ratio < 1.35
 
 When "Use Water" is selected:
-- Sea crossings are detected automatically based on path geometry
+- Detected water segments use straight-line distance at sailing speed (4 knots)
 - Water segments show an anchor icon (⚓) in the leg breakdown
 - A summary shows land vs. sea distance and time breakdown
 

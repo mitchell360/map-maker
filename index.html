@@ -712,7 +712,8 @@ function hideLoading(){
       }
       
       // Check if a path segment likely crosses water (Mediterranean)
-      // For historical travel, sailing was chosen when the sea route was much shorter than walking around
+      // OSRM includes modern ferries, so a LOW ratio (route close to straight-line) indicates water crossing
+      // True land-only routes going around water would have HIGH ratios (1.5-3x straight-line)
       function isWaterCrossing(start,end,routeDist){
         const straightDist=haversineDistance(start,end);
         
@@ -722,15 +723,15 @@ function hideLoading(){
         if(midLat<WATER_BOUNDS.minLat||midLat>WATER_BOUNDS.maxLat)return false;
         if(midLon<WATER_BOUNDS.minLon||midLon>WATER_BOUNDS.maxLon)return false;
         
-        // Must be at least 50km to consider water crossing
-        if(straightDist<50000)return false;
+        // Must be at least 100km to consider water crossing (ferries are typically for longer distances)
+        if(straightDist<100000)return false;
         
-        // Key heuristic: If the land route is significantly longer than the straight-line distance
-        // (ratio > 1.8), this indicates the path goes around a body of water. In ancient times,
-        // travelers would have chosen to sail across rather than walk around.
-        // Normal direct roads are typically 1.2-1.5x straight-line due to road curvature.
+        // Key heuristic: OSRM uses ferries, so a LOW ratio indicates ferry/water usage
+        // - Ratio < 1.35: OSRM took a near-direct path (likely using ferries)
+        // - Ratio > 1.5: OSRM routed around (true land path)
+        // Normal overland routes are typically 1.4-1.6x straight-line due to road curvature
         const ratio=routeDist>0?(routeDist/straightDist):1.0;
-        return ratio>1.8;
+        return ratio<1.35;
       }
       
       // Analyze each leg for water crossings
