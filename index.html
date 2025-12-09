@@ -767,17 +767,27 @@ function hideLoading(){
   const sailingRoutes=L.layerGroup();
   
   // Create overlay layers - Ancient World
-  const ancientPlaces=L.layerGroup();
+  const ancientPlaces=L.layerGroup();  // All cities (places_medium)
+  const majorCities=L.layerGroup();    // Major cities only (places_low)
   const ancientProvinces=L.layerGroup();
+  const provinces60BC=L.layerGroup();
+  const provinces117AD=L.layerGroup();
+  const provinces200AD=L.layerGroup();
   const ancientRivers=L.layerGroup();
   const ancientLakes=L.layerGroup();
   const ancientAqueducts=L.layerGroup();
   const ancientFortifications=L.layerGroup();
+  const ancientBridges=L.layerGroup();
+  const ancientSeas=L.layerGroup();
   
   // Track which layers are loaded
   const layerLoadState={
-    places:false,provinces:false,rivers:false,lakes:false,aqueducts:false,fortifications:false
+    places:false,majorCities:false,provinces:false,provinces60bc:false,provinces117ad:false,provinces200ad:false,
+    rivers:false,lakes:false,aqueducts:false,fortifications:false,bridges:false,seas:false
   };
+  
+  // Current province period (60BC, 117AD, 200AD)
+  let currentProvincePeriod='117ad';
   
   // Label language setting
   let labelLanguage='latin'; // 'latin', 'modern', 'greek'
@@ -1102,17 +1112,147 @@ function hideLoading(){
       }).catch(e=>console.error('Fortifications load error:',e));
   }
   
+  // Load Major Cities (places_low.geojson - 1523 major settlements)
+  function loadMajorCities(){
+    if(layerLoadState.majorCities)return;
+    layerLoadState.majorCities=true;
+    fetch('data/places_low.geojson')
+      .then(r=>r.json())
+      .then(data=>{
+        const layer=L.geoJSON(data,{
+          pointToLayer:(f,latlng)=>{
+            const major=f.properties.major===1;
+            return L.circleMarker(latlng,{
+              radius:major?6:4,
+              fillColor:major?'#dc2626':'#f59e0b',
+              color:'#fff',
+              weight:1,
+              opacity:1,
+              fillOpacity:0.8
+            });
+          },
+          onEachFeature:(f,layer)=>{
+            const p=f.properties;
+            const name=labelLanguage==='latin'?p.latin:(labelLanguage==='greek'&&p.greek?p.greek:p.modern);
+            const displayName=name||p.latin||p.modern||'Unknown';
+            layer.bindPopup(`<b>${displayName}</b><br><span style="color:#6b7280">Latin: ${p.latin||'—'}<br>Modern: ${p.modern||'—'}</span>`);
+          }
+        });
+        majorCities.clearLayers();
+        majorCities.addLayer(layer);
+        console.log(`Loaded ${data.features.length} major cities`);
+      }).catch(e=>console.error('Major cities load error:',e));
+  }
+  
+  // Load Bridges
+  function loadAncientBridges(){
+    if(layerLoadState.bridges)return;
+    layerLoadState.bridges=true;
+    fetch('data/bridges.geojson')
+      .then(r=>r.json())
+      .then(data=>{
+        const layer=L.geoJSON(data,{
+          pointToLayer:(f,latlng)=>L.circleMarker(latlng,{radius:5,fillColor:'#92400e',color:'#78350f',weight:2,opacity:1,fillOpacity:0.8}),
+          onEachFeature:(f,layer)=>{
+            const p=f.properties;
+            const name=p.latin||p.modern||'Roman Bridge';
+            layer.bindPopup(`<b>${name}</b><br><span style="color:#6b7280">${p.modern||''}</span>`);
+          }
+        });
+        ancientBridges.clearLayers();
+        ancientBridges.addLayer(layer);
+        console.log(`Loaded ${data.features.length} bridges`);
+      }).catch(e=>console.error('Bridges load error:',e));
+  }
+  
+  // Load Seas (labels for major ancient seas)
+  function loadAncientSeas(){
+    if(layerLoadState.seas)return;
+    layerLoadState.seas=true;
+    fetch('data/seas.geojson')
+      .then(r=>r.json())
+      .then(data=>{
+        const layer=L.geoJSON(data,{
+          pointToLayer:(f,latlng)=>{
+            const name=labelLanguage==='latin'?f.properties.latin:f.properties.modern;
+            return L.marker(latlng,{
+              icon:L.divIcon({
+                className:'sea-label',
+                html:`<div style="font-family:Georgia,serif;font-style:italic;font-size:14px;color:#0369a1;text-shadow:1px 1px 2px white,-1px -1px 2px white,1px -1px 2px white,-1px 1px 2px white;white-space:nowrap">${name}</div>`,
+                iconSize:[0,0],
+                iconAnchor:[0,0]
+              }),
+              interactive:false
+            });
+          }
+        });
+        ancientSeas.clearLayers();
+        ancientSeas.addLayer(layer);
+        console.log(`Loaded ${data.features.length} sea labels`);
+      }).catch(e=>console.error('Seas load error:',e));
+  }
+  
+  // Load Province boundaries for specific time period
+  function loadProvinces(period){
+    const stateKey='provinces'+period;
+    if(layerLoadState[stateKey])return;
+    layerLoadState[stateKey]=true;
+    
+    const periodFiles={
+      '60bc':'data/provinces_60bc.geojson',
+      '117ad':'data/provinces_117ad.geojson',
+      '200ad':'data/provinces_200ad.geojson'
+    };
+    
+    const targetLayer={'60bc':provinces60BC,'117ad':provinces117AD,'200ad':provinces200AD}[period];
+    
+    fetch(periodFiles[period])
+      .then(r=>r.json())
+      .then(data=>{
+        const layer=L.geoJSON(data,{
+          style:{color:'#7c3aed',weight:2,opacity:0.7,fillOpacity:0.08,fillColor:'#7c3aed'},
+          onEachFeature:(f,layer)=>{
+            const p=f.properties;
+            layer.bindPopup(`<b>${p.name||p.NAME||'Province'}</b>`);
+          }
+        });
+        targetLayer.clearLayers();
+        targetLayer.addLayer(layer);
+        console.log(`Loaded ${data.features.length} provinces (${period})`);
+      }).catch(e=>console.error(`Provinces ${period} load error:`,e));
+  }
+  
+  // Switch province period
+  function switchProvincePeriod(period){
+    // Remove all province layers from map
+    map.removeLayer(provinces60BC);
+    map.removeLayer(provinces117AD);
+    map.removeLayer(provinces200AD);
+    
+    // Add the selected period
+    currentProvincePeriod=period;
+    const targetLayer={'60bc':provinces60BC,'117ad':provinces117AD,'200ad':provinces200AD}[period];
+    targetLayer.addTo(map);
+    loadProvinces(period);
+  }
+  
   // Load layers when overlay is added
   map.on('overlayadd',function(e){
     if(e.layer===romanRoads)loadRomanRoads();
     if(e.layer===seaLanes)loadSeaLanes();
     if(e.layer===sailingRoutes)loadSailingRoutes();
     if(e.layer===ancientPlaces)loadAncientPlaces();
+    if(e.layer===majorCities)loadMajorCities();
     if(e.layer===ancientProvinces)loadAncientProvinces();
+    if(e.layer===provinces60BC)loadProvinces('60bc');
+    if(e.layer===provinces117AD)loadProvinces('117ad');
+    if(e.layer===provinces200AD)loadProvinces('200ad');
     if(e.layer===ancientRivers)loadAncientRivers();
     if(e.layer===ancientLakes)loadAncientLakes();
     if(e.layer===ancientAqueducts)loadAncientAqueducts();
     if(e.layer===ancientFortifications)loadAncientFortifications();
+    if(e.layer===ancientBridges)loadAncientBridges();
+    if(e.layer===ancientSeas)loadAncientSeas();
   });
   
   // Build custom layer control panel
@@ -1143,48 +1283,58 @@ function hideLoading(){
             <span class="layer-section-arrow">▼</span>
           </div>
           <div class="layer-section-items">
-            <div class="layer-item"><input type="checkbox" id="layer-travel"><label for="layer-travel">Route & Travel Time</label></div>
+            <div class="layer-item"><input type="checkbox" id="layer-travel" checked><label for="layer-travel">Route & Travel Time</label></div>
           </div>
         </div>
-        <div class="layer-section collapsed">
+        <div class="layer-section">
           <div class="layer-section-header" onclick="this.parentElement.classList.toggle('collapsed')">
             <span class="layer-section-icon">🏛️</span>Roman Infrastructure
             <span class="layer-section-arrow">▼</span>
           </div>
           <div class="layer-section-items">
-            <div class="layer-item"><input type="checkbox" id="layer-roads"><label for="layer-roads">Roman Roads</label></div>
+            <div class="layer-item"><input type="checkbox" id="layer-roads" checked><label for="layer-roads">Roman Roads</label></div>
             <div class="layer-item"><input type="checkbox" id="layer-sealanes"><label for="layer-sealanes">Sea Lanes</label></div>
+            <div class="layer-item"><input type="checkbox" id="layer-bridges"><label for="layer-bridges">Bridges</label></div>
             <div class="layer-item"><input type="checkbox" id="layer-aqueducts"><label for="layer-aqueducts">Aqueducts</label></div>
           </div>
         </div>
-        <div class="layer-section collapsed">
+        <div class="layer-section">
           <div class="layer-section-header" onclick="this.parentElement.classList.toggle('collapsed')">
             <span class="layer-section-icon">🏘️</span>Settlements
             <span class="layer-section-arrow">▼</span>
           </div>
           <div class="layer-section-items">
-            <div class="layer-item"><input type="checkbox" id="layer-places"><label for="layer-places">Ancient Cities</label></div>
+            <div class="layer-item"><input type="checkbox" id="layer-major-cities" checked><label for="layer-major-cities">Major Cities</label></div>
+            <div class="layer-item"><input type="checkbox" id="layer-all-cities"><label for="layer-all-cities">All Cities <span class="layer-item-sub">(16k+)</span></label></div>
             <div class="layer-item"><input type="checkbox" id="layer-forts"><label for="layer-forts">Fortifications</label></div>
           </div>
         </div>
         <div class="layer-section collapsed">
           <div class="layer-section-header" onclick="this.parentElement.classList.toggle('collapsed')">
-            <span class="layer-section-icon">🗺️</span>Political
+            <span class="layer-section-icon">🏛️</span>Political
             <span class="layer-section-arrow">▼</span>
           </div>
           <div class="layer-section-items">
-            <div class="layer-item"><input type="checkbox" id="layer-provinces"><label for="layer-provinces">Roman Provinces</label></div>
+            <div class="layer-item">
+              <input type="checkbox" id="layer-provinces"><label for="layer-provinces">Roman Provinces</label>
+              <select id="province-period" class="layer-dropdown">
+                <option value="60bc">60 BC</option>
+                <option value="117ad" selected>117 AD</option>
+                <option value="200ad">200 AD</option>
+              </select>
+            </div>
             <div class="layer-item"><input type="checkbox" id="layer-borders"><label for="layer-borders">Modern Borders</label></div>
           </div>
         </div>
-        <div class="layer-section collapsed">
+        <div class="layer-section">
           <div class="layer-section-header" onclick="this.parentElement.classList.toggle('collapsed')">
             <span class="layer-section-icon">💧</span>Water Features
             <span class="layer-section-arrow">▼</span>
           </div>
           <div class="layer-section-items">
-            <div class="layer-item"><input type="checkbox" id="layer-rivers"><label for="layer-rivers">Rivers</label></div>
-            <div class="layer-item"><input type="checkbox" id="layer-lakes"><label for="layer-lakes">Lakes</label></div>
+            <div class="layer-item"><input type="checkbox" id="layer-rivers" checked><label for="layer-rivers">Rivers</label></div>
+            <div class="layer-item"><input type="checkbox" id="layer-lakes" checked><label for="layer-lakes">Lakes</label></div>
+            <div class="layer-item"><input type="checkbox" id="layer-seas"><label for="layer-seas">Sea Names</label></div>
             <div class="layer-item"><input type="checkbox" id="layer-sailing"><label for="layer-sailing">Sailing Routes</label></div>
           </div>
         </div>
@@ -1201,18 +1351,20 @@ function hideLoading(){
       });
     });
     
-    // Overlay toggles
+    // Overlay toggles - standard layers
     const layerMap={
       'layer-travel':travelLineAndTime,
       'layer-roads':romanRoads,
       'layer-sealanes':seaLanes,
+      'layer-bridges':ancientBridges,
       'layer-aqueducts':ancientAqueducts,
-      'layer-places':ancientPlaces,
+      'layer-major-cities':majorCities,
+      'layer-all-cities':ancientPlaces,
       'layer-forts':ancientFortifications,
-      'layer-provinces':ancientProvinces,
       'layer-borders':countryBorders,
       'layer-rivers':ancientRivers,
       'layer-lakes':ancientLakes,
+      'layer-seas':ancientSeas,
       'layer-sailing':sailingRoutes
     };
     
@@ -1227,6 +1379,39 @@ function hideLoading(){
             map.removeLayer(layer);
           }
         });
+      }
+    });
+    
+    // Province layer with period selector
+    const provincesCheckbox=panel.querySelector('#layer-provinces');
+    const provincePeriodSelect=panel.querySelector('#province-period');
+    
+    provincesCheckbox.addEventListener('change',function(){
+      if(this.checked){
+        switchProvincePeriod(provincePeriodSelect.value);
+      }else{
+        map.removeLayer(provinces60BC);
+        map.removeLayer(provinces117AD);
+        map.removeLayer(provinces200AD);
+      }
+    });
+    
+    provincePeriodSelect.addEventListener('change',function(){
+      if(provincesCheckbox.checked){
+        switchProvincePeriod(this.value);
+      }
+    });
+    
+    // Apply default layers (checked by default)
+    const defaultLayers=['layer-travel','layer-roads','layer-major-cities','layer-rivers','layer-lakes'];
+    defaultLayers.forEach(id=>{
+      const checkbox=panel.querySelector(`#${id}`);
+      if(checkbox&&checkbox.checked){
+        const layer=layerMap[id];
+        if(layer){
+          layer.addTo(map);
+          map.fire('overlayadd',{layer});
+        }
       }
     });
     
