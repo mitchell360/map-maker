@@ -22,10 +22,11 @@ The tool uses a hybrid architecture with a static frontend and a Flask backend f
 - **Custom Collapsible Layer Control Panel:** Replaces default Leaflet control with organized categories:
   - **Base Map:** Ancient Terrain (DARE Background + Hillshade), Ancient Full (DARE with roads), Modern Clean (CartoDB), Modern Detailed (OSM)
   - **Your Journey:** Route & Travel Time toggle
-  - **Roman Infrastructure:** Roman Roads, Sea Lanes, Aqueducts
-  - **Settlements:** Ancient Cities, Fortifications
-  - **Political:** Roman Provinces, Modern Borders
-  - **Water Features:** Rivers, Lakes, Sailing Routes
+  - **Roman Infrastructure:** Roman Roads, Sea Lanes, Bridges, Aqueducts
+  - **Settlements:** Famous Cities (50, default on), Major Cities (1.5k), All Cities (16k+), Fortifications
+  - **Political:** Roman Provinces (with period selector: 60 BC, 117 AD, 200 AD), Modern Borders
+  - **Water Features:** Rivers, Lakes, Sea Names, Sailing Routes
+- **Three-Tier City System:** Famous Cities shows 50 curated major ancient cities (Rome, Athens, Alexandria, Jerusalem, Carthage, etc.) with Latin name labels by default. Click markers to see Latin, modern, and Greek names in popup.
 - **Lazy Loading Overlays:** Ancient world data layers load on-demand when toggled to minimize initial load time.
 - **Map Title:** Optional `title` URL parameter displays a centered title above the map.
 - **Loading Progress Overlay:** Shows real-time status during map initialization, geocoding, and route calculation.
@@ -52,10 +53,16 @@ The tool uses a hybrid architecture with a static frontend and a Flask backend f
 - `country_borders.geojson`: Natural Earth country boundary data.
 - `sailing_routes.json`: Mendeley ancient Mediterranean sailing routes (58 ports, for overlay display).
 - `data/`: Ancient world overlay data files (lazy-loaded):
-  - `places.geojson`: DARE ancient cities/settlements with Latin/modern names.
-  - `provinces.geojson`: Roman province boundaries.
+  - `famous_cities.geojson`: Curated 50 most important ancient cities (Rome, Athens, Alexandria, Jerusalem, etc.) with Latin, modern, and Greek names.
+  - `places_low.geojson`: 1,523 major settlements from klokantech/roman-empire dataset.
+  - `places_medium.geojson`: 16,000+ all settlements from klokantech/roman-empire dataset.
+  - `provinces_60bc.geojson`: Roman province boundaries at 60 BC (74 provinces).
+  - `provinces_117ad.geojson`: Roman province boundaries at 117 AD (112 provinces).
+  - `provinces_200ad.geojson`: Roman province boundaries at 200 AD (112 provinces).
+  - `bridges.geojson`: 124 Roman bridges extracted from DARE subsites data.
   - `rivers.geojson`: Ancient river network.
   - `lakes.geojson`: Ancient lakes and bodies of water.
+  - `seas.geojson`: Major ancient sea name labels.
   - `aqueducts.geojson`: Roman aqueduct locations.
   - `fortifications.geojson`: Roman fortifications and military sites.
 

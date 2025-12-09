@@ -769,6 +769,7 @@ function hideLoading(){
   // Create overlay layers - Ancient World
   const ancientPlaces=L.layerGroup();  // All cities (places_medium)
   const majorCities=L.layerGroup();    // Major cities only (places_low)
+  const famousCities=L.layerGroup();   // Famous cities only (curated 50)
   const ancientProvinces=L.layerGroup();
   const provinces60BC=L.layerGroup();
   const provinces117AD=L.layerGroup();
@@ -782,7 +783,7 @@ function hideLoading(){
   
   // Track which layers are loaded
   const layerLoadState={
-    places:false,majorCities:false,provinces:false,provinces60bc:false,provinces117ad:false,provinces200ad:false,
+    places:false,majorCities:false,famousCities:false,provinces:false,provinces60bc:false,provinces117ad:false,provinces200ad:false,
     rivers:false,lakes:false,aqueducts:false,fortifications:false,bridges:false,seas:false
   };
   
@@ -1144,6 +1145,52 @@ function hideLoading(){
       }).catch(e=>console.error('Major cities load error:',e));
   }
   
+  // Load Famous Cities (curated 50 most important ancient cities)
+  function loadFamousCities(){
+    if(layerLoadState.famousCities)return;
+    layerLoadState.famousCities=true;
+    fetch('data/famous_cities.geojson')
+      .then(r=>r.json())
+      .then(data=>{
+        const layer=L.geoJSON(data,{
+          pointToLayer:(f,latlng)=>{
+            const p=f.properties;
+            const name=p.latin||p.modern||'?';
+            return L.marker(latlng,{
+              icon:L.divIcon({
+                className:'famous-city-marker',
+                html:`<div style="position:relative">
+                  <div style="width:12px;height:12px;background:#b91c1c;border:2px solid #fff;border-radius:50%;box-shadow:0 1px 3px rgba(0,0,0,0.4)"></div>
+                  <div style="position:absolute;top:-18px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:11px;font-weight:600;color:#7f1d1d;text-shadow:1px 1px 1px white,-1px -1px 1px white,1px -1px 1px white,-1px 1px 1px white">${name}</div>
+                </div>`,
+                iconSize:[12,12],
+                iconAnchor:[6,6]
+              })
+            });
+          },
+          onEachFeature:(f,layer)=>{
+            const p=f.properties;
+            const latinName=p.latin||'—';
+            const modernName=p.modern||'—';
+            const greekName=p.greek||'—';
+            layer.bindPopup(`
+              <div style="min-width:150px">
+                <div style="font-size:16px;font-weight:600;color:#1f2937;margin-bottom:8px">${latinName}</div>
+                <div style="color:#6b7280;font-size:12px;line-height:1.6">
+                  <div><span style="color:#374151;font-weight:500">Latin:</span> ${latinName}</div>
+                  <div><span style="color:#374151;font-weight:500">Modern:</span> ${modernName}</div>
+                  ${greekName!=='—'?`<div><span style="color:#374151;font-weight:500">Greek:</span> ${greekName}</div>`:''}
+                </div>
+              </div>
+            `);
+          }
+        });
+        famousCities.clearLayers();
+        famousCities.addLayer(layer);
+        console.log(`Loaded ${data.features.length} famous cities`);
+      }).catch(e=>console.error('Famous cities load error:',e));
+  }
+  
   // Load Bridges
   function loadAncientBridges(){
     if(layerLoadState.bridges)return;
@@ -1243,6 +1290,7 @@ function hideLoading(){
     if(e.layer===sailingRoutes)loadSailingRoutes();
     if(e.layer===ancientPlaces)loadAncientPlaces();
     if(e.layer===majorCities)loadMajorCities();
+    if(e.layer===famousCities)loadFamousCities();
     if(e.layer===ancientProvinces)loadAncientProvinces();
     if(e.layer===provinces60BC)loadProvinces('60bc');
     if(e.layer===provinces117AD)loadProvinces('117ad');
@@ -1304,7 +1352,8 @@ function hideLoading(){
             <span class="layer-section-arrow">▼</span>
           </div>
           <div class="layer-section-items">
-            <div class="layer-item"><input type="checkbox" id="layer-major-cities" checked><label for="layer-major-cities">Major Cities</label></div>
+            <div class="layer-item"><input type="checkbox" id="layer-famous-cities" checked><label for="layer-famous-cities">Famous Cities <span class="layer-item-sub">(50)</span></label></div>
+            <div class="layer-item"><input type="checkbox" id="layer-major-cities"><label for="layer-major-cities">Major Cities <span class="layer-item-sub">(1.5k)</span></label></div>
             <div class="layer-item"><input type="checkbox" id="layer-all-cities"><label for="layer-all-cities">All Cities <span class="layer-item-sub">(16k+)</span></label></div>
             <div class="layer-item"><input type="checkbox" id="layer-forts"><label for="layer-forts">Fortifications</label></div>
           </div>
@@ -1358,6 +1407,7 @@ function hideLoading(){
       'layer-sealanes':seaLanes,
       'layer-bridges':ancientBridges,
       'layer-aqueducts':ancientAqueducts,
+      'layer-famous-cities':famousCities,
       'layer-major-cities':majorCities,
       'layer-all-cities':ancientPlaces,
       'layer-forts':ancientFortifications,
@@ -1403,7 +1453,7 @@ function hideLoading(){
     });
     
     // Apply default layers (checked by default)
-    const defaultLayers=['layer-travel','layer-roads','layer-major-cities','layer-rivers','layer-lakes'];
+    const defaultLayers=['layer-travel','layer-roads','layer-famous-cities','layer-rivers','layer-lakes'];
     defaultLayers.forEach(id=>{
       const checkbox=panel.querySelector(`#${id}`);
       if(checkbox&&checkbox.checked){
