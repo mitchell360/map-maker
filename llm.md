@@ -462,17 +462,36 @@ Please provide complete location details.
 
 ## Map Features
 
-### Base Maps
-- **Ancient World (DARE)** - Default historical map
-- **Modern Clean** - CartoDB Positron
-- **Modern Detailed** - OpenStreetMap
+### Base Maps (Radio buttons in "Base Map" section of layer panel)
+- **Ancient Terrain** - DARE Background tiles with hillshade overlay (terrain with elevation shading, no roads - default)
+- **Ancient Full (DARE)** - Full DARE tiles with all baked-in features including roads
+- **Modern Clean** - CartoDB Positron (minimalist modern map)
+- **Modern Detailed** - OpenStreetMap (full detail modern map)
 
-### Overlays (Toggle in layer control)
-- **Country Borders** - Political boundaries
-- **Travel Line and Time** - Color-coded routes with travel time estimates
+### Layer Control Panel (Collapsible categories on right side of map)
+
+The custom layer panel organizes overlays into logical categories, each collapsible:
+
+**Your Journey:**
+- **Route & Travel Time** - Color-coded routes with travel time estimates
+
+**Roman Infrastructure:**
 - **Roman Roads** - Historical Roman road network (land routes only, ~15,200 segments from itiner-e)
-- **Sea Lanes (itiner-e)** - Ancient sea lanes and river routes (1,358 water routes, dashed cyan for sea, solid blue for rivers)
-- **Sailing Routes (Mendeley)** - Research-based ancient Mediterranean shipping network (58 ports, 257 documented routes)
+- **Sea Lanes** - Ancient sea lanes and river routes (1,358 water routes)
+- **Aqueducts** - Roman aqueduct locations
+
+**Settlements:**
+- **Ancient Cities** - DARE settlements with Latin/modern names (major cities = larger markers)
+- **Fortifications** - Roman military sites and fortifications
+
+**Political:**
+- **Roman Provinces** - Provincial boundary outlines
+- **Modern Borders** - Current political boundaries
+
+**Water Features:**
+- **Rivers** - Ancient river network
+- **Lakes** - Ancient lakes and bodies of water
+- **Sailing Routes** - Mendeley research-based ancient Mediterranean shipping network (58 ports)
 
 ### Route Type Selector
 When "Travel Line and Time" overlay is enabled, you can choose how the journey handles water crossings:
