@@ -1168,14 +1168,14 @@ function hideLoading(){
       
       // Function to redraw routes based on current mode
       function redrawRoutes(){
-        // Clear existing travel lines (except markers)
+        // Clear existing travel lines AND numbered markers
         travelLineAndTime.eachLayer(layer=>{
-          if(layer instanceof L.Polyline||layer instanceof L.Circle){
+          if(layer instanceof L.Polyline||layer instanceof L.Circle||layer instanceof L.Marker){
             travelLineAndTime.removeLayer(layer);
           }
         });
         
-        // Redraw routes for current mode
+        // Redraw routes for current mode with numbered badges
         for(let i=0;i<legRouteInfo.length;i++){
           const info=legRouteInfo[i];
           const route=currentRouteMode==='water'?info.mixedRoute:info.landRoute;
@@ -1187,6 +1187,34 @@ function hideLoading(){
             // Draw main path
             L.polyline(latlngs,{color:'#ffffff',weight:5,opacity:0.9}).addTo(travelLineAndTime);
             L.polyline(latlngs,{color:segmentColor,weight:3,opacity:0.95}).addTo(travelLineAndTime);
+            
+            // Calculate path length for badge placement
+            let pathLength=0;
+            for(let j=0;j<latlngs.length-1;j++){
+              pathLength+=map.distance(latlngs[j],latlngs[j+1]);
+            }
+            
+            // Add numbered badges at regular intervals
+            const segmentNumber=i+1;
+            const arrowInterval=Math.min(150000,pathLength/4);
+            const numArrows=Math.max(2,Math.floor((pathLength/arrowInterval)*0.75));
+            
+            for(let a=1;a<=numArrows;a++){
+              const distAlongPath=(pathLength/(numArrows+1))*a;
+              const point=getPointAtDistance(latlngs,distAlongPath);
+              if(point){
+                const arrowHtml='<div style="width:18px;height:18px;background:#ffffff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:10px;color:#000;box-shadow:0 2px 6px rgba(0,0,0,0.3),0 0 0 2px '+segmentColor+'">'+segmentNumber+'</div>';
+                L.marker([point.lat,point.lng],{
+                  icon:L.divIcon({
+                    className:'arrow-marker',
+                    html:arrowHtml,
+                    iconSize:[18,18],
+                    iconAnchor:[9,9]
+                  }),
+                  interactive:false
+                }).addTo(travelLineAndTime);
+              }
+            }
           }
         }
       }
