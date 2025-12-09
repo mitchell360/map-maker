@@ -712,6 +712,7 @@ function hideLoading(){
       }
       
       // Check if a path segment likely crosses water (Mediterranean)
+      // For historical travel, sailing was chosen when the sea route was much shorter than walking around
       function isWaterCrossing(start,end,routeDist){
         const straightDist=haversineDistance(start,end);
         
@@ -724,11 +725,12 @@ function hideLoading(){
         // Must be at least 50km to consider water crossing
         if(straightDist<50000)return false;
         
-        // Key heuristic: If route distance is very close to straight-line distance (ratio < 1.15),
-        // OSRM likely returned a straight line because it couldn't find a land route (water crossing)
-        // Normal road routes are 1.2-1.5x the straight-line distance due to road curvature
+        // Key heuristic: If the land route is significantly longer than the straight-line distance
+        // (ratio > 1.8), this indicates the path goes around a body of water. In ancient times,
+        // travelers would have chosen to sail across rather than walk around.
+        // Normal direct roads are typically 1.2-1.5x straight-line due to road curvature.
         const ratio=routeDist>0?(routeDist/straightDist):1.0;
-        return ratio<1.15;
+        return ratio>1.8;
       }
       
       // Analyze each leg for water crossings
