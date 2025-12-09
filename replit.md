@@ -10,38 +10,39 @@ This project is an interactive map visualization tool built with Leaflet.js, des
 - Markdown format is both LLM-friendly and human-readable when rendered on GitHub.
 
 ## System Architecture
-The tool uses a hybrid architecture with a static frontend and a Flask backend for a screenshot API (primarily for Replit development). The frontend `index.html` file integrates Leaflet.js via CDN and handles all map rendering, geocoding, and routing logic. `llm.md` serves as the comprehensive, web-standard documentation for LLM instructions.
+The tool uses a hybrid architecture with a static frontend and a Flask backend for a screenshot API (primarily for Replit development). The frontend `index.html` file integrates Leaflet.js via CDN and handles all map rendering, geocoding, and graph-based routing logic. `llm.md` serves as the comprehensive, web-standard documentation for LLM instructions.
 
 **UI/UX Decisions:**
 - **Two Location Types:** Chronological (blue markers, connected by paths) and Reference (red markers, standalone).
-- **Responsive Drawer Interface:** Markers open a detailed information drawer, which acts as a bottom sheet on mobile (with swipe gestures and pull handle) and a centered modal on desktop. This unified UX eliminates mobile detection complexity.
+- **Responsive Drawer Interface:** Markers open a detailed information drawer, which acts as a bottom sheet on mobile (with swipe gestures and pull handle) and a centered modal on desktop.
 - **Permanent Labels:** Location names are displayed directly above markers (blue for chronological, red for reference).
-- **Travel Line and Time Overlay:** Displays color-coded travel paths (purple gradient for accessibility), numbered circular badges along paths, and a travel time information box with legend.
-- **Route Type Selector:** "Land Only" (routes around water) vs "Use Water" (detects Mediterranean crossings, calculates sailing at 4 knots/7.4 km/h). When Use Water is enabled, shows land vs. sea breakdown with anchor icons for water segments.
-- **Transport Mode Selector:** 4 historical land travel speed options: Walking (4 km/h), Ox cart (2 km/h), Pack animal (4.5 km/h), Horse courier (6 km/h). Selector appears when Travel Line overlay is enabled and dynamically recalculates travel times.
-- **Toggleable Overlays:** Includes Country Borders and Roman Roads (16,554 road segments from itiner-e dataset).
+- **Travel Line and Time Overlay:** Displays color-coded travel paths (purple gradient), numbered circular badges along paths, and a travel time information box.
+- **Route Type Selector:** "Land Only" uses only Roman Roads, "Use Water" uses both Roman Roads AND itiner-e Sea Lanes for optimal mixed routing.
+- **Transport Mode Selector:** 4 historical land travel speed options: Walking (4 km/h), Ox cart (2 km/h), Pack animal (4.5 km/h), Horse courier (6 km/h).
+- **Toggleable Overlays:** Includes Country Borders, Roman Roads (14,993 segments), Sea Lanes (524 segments), and Mendeley Sailing Routes.
 - **Map Title:** Optional `title` URL parameter displays a centered title above the map.
-- **Loading Progress Overlay:** A full-screen indicator with spinner shows real-time status during map initialization, geocoding, and route calculation.
+- **Loading Progress Overlay:** Shows real-time status during map initialization, geocoding, and route calculation.
 
 **Technical Implementations:**
-- **URL-Driven Customization:** All features are controllable via query parameters, with `chronoLocationsAndLabels` and `referenceLocationsAndLabels` using a `Location~Label|Location~Label` format to eliminate count mismatch errors.
-- **Fast Local Geocoding:** A `coordinates.json` file contains 90+ pre-computed coordinates for common biblical/historical locations, enabling instant lookup without API calls. Falls back to Nominatim API for unknown locations.
-- **Graph-Based Sea Routing:** When water crossings are detected, uses Dijkstra shortest path algorithm on the sailing_routes.json graph (58 ports, 211 routes) to find proper maritime paths following ancient sea lanes. Sea routes are drawn as cyan dashed polylines connecting ports, avoiding straight lines over land.
-- **Dual Route Display:** Both OSRM land routes (purple solid) and graph-based sea routes (cyan dashed with anchor icons) are drawn simultaneously when water crossings are detected.
-- **Water Crossing Detection:** Uses OSRM route vs. straight-line distance ratio heuristic (ratio < 1.35 indicates ferry/water usage). Journey endpoints are snapped to nearest ports (within 200km) for sea routing.
-- **Geocoding Best Practices:** `llm.md` includes detailed best practices for geocoding, addressing issues like province/city center discrepancies and ancient city names, including a "Coordinate Override" fallback.
-- **Client-side Cache-busting:** For Replit development, a timestamp-based cache-busting mechanism is appended to URLs to ensure fresh previews.
-- **Static Deployment:** Designed for easy deployment to GitHub Pages, serving static files directly without a backend.
+- **itiner-e Graph-Based Routing:** Client-side Dijkstra shortest path on a preprocessed routing graph (11,031 nodes, 16,351 edges) built from the itiner-e Roman Roads dataset. Replaces external OSRM API calls.
+- **Routing Graph Structure:** `itinere_graph.json` contains nodes, edges with type classification (land/sea/river), and a 0.25° spatial index for fast nearest-node lookup. Generated by `preprocess_graph.py`.
+- **Edge Type Filtering:** "Land Only" mode filters to land+river edges only; "Use Water" mode includes all edges (land+sea+river) for optimal mixed routing.
+- **Accurate Travel Time Calculation:** Uses actual edge-type breakdown from routing to calculate land vs. sea distances. Sailing speed: 4 knots (7.4 km/h), land transport speeds configurable.
+- **URL-Driven Customization:** All features controllable via query parameters with `chronoLocationsAndLabels` and `referenceLocationsAndLabels` using `Location~Label|Location~Label` format.
+- **Fast Local Geocoding:** A `coordinates.json` file contains 90+ pre-computed coordinates for common biblical/historical locations.
+- **Static Deployment:** Designed for easy deployment to GitHub Pages.
 
 **File Structure:**
 - `index.html`: Main map application (static).
-- `llm.md`: LLM instruction documentation (static, web standard).
+- `itinere_graph.json`: Preprocessed routing graph (11,031 nodes, 16,351 edges, ~18MB).
+- `preprocess_graph.py`: Script to regenerate routing graph from roman_roads.ndjson.
+- `llm.md`: LLM instruction documentation (static).
 - `README.md`: GitHub-facing project documentation.
 - `server.py`: Flask backend with screenshot API (Replit only).
-- `coordinates.json`: Pre-computed coordinates for 90+ biblical/historical locations (fast geocoding).
+- `coordinates.json`: Pre-computed coordinates for 90+ biblical/historical locations.
 - `roman_roads.ndjson`: itiner-e Roman road network data (16,554 segments, 39MB).
-- `country_borders.geojson`: Natural Earth country boundary data (local).
-- `sailing_routes.json`: Mendeley ancient Mediterranean sailing routes (58 ports, 257 routes).
+- `country_borders.geojson`: Natural Earth country boundary data.
+- `sailing_routes.json`: Mendeley ancient Mediterranean sailing routes (58 ports, for overlay display).
 
 ## External Dependencies
 - **Mapping Library:** Leaflet.js (CDN-hosted)
@@ -49,9 +50,8 @@ The tool uses a hybrid architecture with a static frontend and a Flask backend f
     - DARE (Digital Atlas of the Roman Empire) - dh.gu.se
     - CartoDB Positron (modern clean map)
     - OpenStreetMap (modern detailed map)
-- **Geocoding API:** OpenStreetMap Nominatim API
-- **Routing API:** OSRM (routing.openstreetmap.de) for walking route calculations
-- **Country Boundary Data:** Natural Earth GeoJSON (downloaded locally)
-- **Roman Roads Data:** itiner-e dataset (downloaded locally as `roman_roads.ndjson`)
-- **Sailing Routes Data:** Mendeley ancient Mediterranean shipping network (downloaded locally as `sailing_routes.json`, 58 ports, 257 routes)
+- **Geocoding API:** OpenStreetMap Nominatim API (fallback for unknown locations)
+- **Routing:** Client-side graph-based routing using itiner-e network (no external API)
+- **Country Boundary Data:** Natural Earth GeoJSON (local)
+- **Roman Roads Data:** itiner-e dataset (local, preprocessed into routing graph)
 - **Screenshot API (Replit only):** Playwright with system Chromium from Nix.

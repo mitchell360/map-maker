@@ -338,7 +338,7 @@ function haversineKm(lat1,lon1,lat2,lon2){
   return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
 }
 
-// Find nearest node to a coordinate
+// Find nearest node to a coordinate (also returns the adjacent edge type for connector classification)
 function snapToNearestNode(lat,lon){
   if(!itinereGraph)return null;
   const nodes=itinereGraph.nodes;
@@ -348,6 +348,7 @@ function snapToNearestNode(lat,lon){
   // Check cells around the point
   let bestNode=null;
   let bestDist=Infinity;
+  let bestEdgeType='land'; // Track the edge type for connector classification
   const maxSearchRadius=3; // Search up to 3 cells away (~75km)
   
   for(let dCell=0;dCell<=maxSearchRadius;dCell++){
@@ -373,6 +374,7 @@ function snapToNearestNode(lat,lon){
             if(dist<bestDist){
               bestDist=dist;
               bestNode={id:nodeId,lat:node.lat,lon:node.lon,dist};
+              bestEdgeType=edge.type||'land';
             }
           }
         }
@@ -383,6 +385,7 @@ function snapToNearestNode(lat,lon){
     if(bestNode&&bestDist<50)break;
   }
   
+  if(bestNode)bestNode.edgeType=bestEdgeType;
   return bestNode;
 }
 
@@ -465,11 +468,24 @@ function dijkstraItinere(startId,endId,useMixed=true){
     pathCoords.push([endNode.lat,endNode.lon]);
   }
   
+  // Calculate land vs sea distance breakdown
+  let landDist=0,seaDist=0;
+  for(const seg of edgeSequence){
+    const edge=itinereGraph.edges[seg.edgeIdx];
+    if(edge.type==='sea'){
+      seaDist+=edge.length;
+    }else{
+      landDist+=edge.length;
+    }
+  }
+  
   return{
     coords:pathCoords,
     distance:dist[endId]*1000, // Convert to meters for compatibility
     edgeTypes,
-    hasSeaSegments:edgeTypes.includes('sea')
+    hasSeaSegments:edgeTypes.includes('sea'),
+    landDistKm:landDist,
+    seaDistKm:seaDist
   };
 }
 
@@ -499,14 +515,25 @@ async function getItinereRoute(start,end,useMixed=true){
   // Add connector legs from actual start/end to snapped nodes
   const fullCoords=[[start.lat,start.lon],...result.coords,[end.lat,end.lon]];
   
-  // Add connector distances
-  const connectorDist=(startNode.dist+endNode.dist)*1000;
+  // Connector distances are always treated as land travel (walking to/from network)
+  // This is semantically correct: you walk to the Roman road or port, then the network routing takes over
+  const connectorDistKm=startNode.dist+endNode.dist;
+  
+  // Validation: total should approximately equal landDistKm + seaDistKm + connectors
+  const totalRouteKm=result.landDistKm+result.seaDistKm;
+  const expectedTotalKm=totalRouteKm+connectorDistKm;
+  const reportedDistKm=result.distance/1000+connectorDistKm;
+  if(Math.abs(expectedTotalKm-reportedDistKm)>1){
+    console.warn(`Route distance mismatch: expected ${expectedTotalKm.toFixed(1)}km, got ${reportedDistKm.toFixed(1)}km`);
+  }
   
   return{
-    distance:result.distance+connectorDist,
+    distance:result.distance+connectorDistKm*1000,
     geometry:{type:'LineString',coordinates:fullCoords.map(c=>[c[1],c[0]])}, // [lon,lat] for GeoJSON
     hasSeaSegments:result.hasSeaSegments,
-    edgeTypes:result.edgeTypes
+    edgeTypes:result.edgeTypes,
+    landDistKm:result.landDistKm+connectorDistKm, // Connectors always land (walking to/from network)
+    seaDistKm:result.seaDistKm
   };
 }
 
@@ -635,24 +662,6 @@ async function geocode(q){
   if(!r.ok)return null;
   const j=await r.json();
   if(j&&j.length)return{lat:parseFloat(j[0].lat),lon:parseFloat(j[0].lon),display:j[0].display_name};
-  return null;
-}
-
-// Walking routes
-async function getWalkingRoute(start,end){
-  const coords=`${start.lon},${start.lat};${end.lon},${end.lat}`;
-  const url=`https://routing.openstreetmap.de/routed-foot/route/v1/foot/${coords}?overview=full&geometries=geojson`;
-  try{
-    const r=await fetch(url);
-    const data=await r.json();
-    if(data.code==='Ok'&&data.routes&&data.routes.length>0){
-      return{
-        distance:data.routes[0].distance,
-        duration:data.routes[0].duration,
-        geometry:data.routes[0].geometry
-      };
-    }
-  }catch(e){console.error('Route error:',e);}
   return null;
 }
 
@@ -1107,12 +1116,14 @@ function hideLoading(){
         }
       }
       
-      // Store route info for travel time calculations
+      // Store route info for travel time calculations (with actual land/sea breakdown)
       legRouteInfo.push({
         landDist:landRoute?landRoute.distance:0,
         mixedDist:mixedRoute?mixedRoute.distance:0,
         hasSea:mixedRoute?mixedRoute.hasSeaSegments:false,
-        landRoute,mixedRoute
+        landRoute,mixedRoute,
+        mixedLandKm:mixedRoute?(mixedRoute.landDistKm||0):0,
+        mixedSeaKm:mixedRoute?(mixedRoute.seaDistKm||0):0
       });
       
       totalDistance+=route.distance;
@@ -1191,26 +1202,23 @@ function hideLoading(){
           const info=legRouteInfo[i];
           
           if(currentRouteMode==='water'){
-            // Use mixed route (may include sea segments)
+            // Use mixed route with actual land/sea breakdown from graph routing
+            const legLandKm=info.mixedLandKm||0;
+            const legSeaKm=info.mixedSeaKm||0;
             const legDist=info.mixedDist||0;
-            if(info.hasSea){
-              // Estimate sea portion (simplified - could be enhanced with edge-level breakdown)
-              totalWaterDist+=legDist*0.6; // Approximate sea portion
-              totalLandDist+=legDist*0.4;
-              totalWaterHours+=(legDist*0.6)/1000/SAILING_SPEED_KMH;
-              totalLandHours+=(legDist*0.4)/1000/landSpeed;
-              legDetails.push({type:'mixed',dist:legDist,speed:landSpeed,name:`${chronoNames[i]} → ${chronoNames[i+1]}`,hasSea:true});
-            }else{
-              totalLandDist+=legDist;
-              totalLandHours+=legDist/1000/landSpeed;
-              legDetails.push({type:'land',dist:legDist,speed:landSpeed,name:`${chronoNames[i]} → ${chronoNames[i+1]}`,hasSea:false});
-            }
+            
+            // Use actual edge-type breakdown
+            totalLandDist+=legLandKm*1000;
+            totalWaterDist+=legSeaKm*1000;
+            totalLandHours+=legLandKm/landSpeed;
+            totalWaterHours+=legSeaKm/SAILING_SPEED_KMH;
+            legDetails.push({type:info.hasSea?'mixed':'land',dist:legDist,speed:landSpeed,name:`${chronoNames[i]} → ${chronoNames[i+1]}`,hasSea:info.hasSea,landKm:legLandKm,seaKm:legSeaKm});
           }else{
-            // Land only mode
+            // Land only mode - use land route distance
             const legDist=info.landDist||0;
             totalLandDist+=legDist;
             totalLandHours+=legDist/1000/landSpeed;
-            legDetails.push({type:'land',dist:legDist,speed:landSpeed,name:`${chronoNames[i]} → ${chronoNames[i+1]}`,hasSea:false});
+            legDetails.push({type:'land',dist:legDist,speed:landSpeed,name:`${chronoNames[i]} → ${chronoNames[i+1]}`,hasSea:false,landKm:legDist/1000,seaKm:0});
           }
         }
         
