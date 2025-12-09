@@ -130,6 +130,79 @@ def main():
     river_edges = sum(1 for e in edges if e['type'] == 'river')
     print(f"Edge types: {land_edges} land, {sea_edges} sea, {river_edges} river")
     
+    # ============================================
+    # ADD SYNTHETIC PORT CONNECTIONS
+    # Connect sea lane endpoints to nearby land road nodes
+    # This bridges the otherwise-disconnected sea and land networks
+    # ============================================
+    print("\nAdding synthetic port connections...")
+    
+    # Build node lookup by id
+    nodes_by_id = {n['id']: n for n in nodes.values()}
+    
+    # Find sea-only and land-only nodes
+    sea_node_ids = set()
+    for e in edges:
+        if e['type'] == 'sea':
+            sea_node_ids.add(e['from'])
+            sea_node_ids.add(e['to'])
+    
+    land_node_ids = set()
+    for e in edges:
+        if e['type'] != 'sea':
+            land_node_ids.add(e['from'])
+            land_node_ids.add(e['to'])
+    
+    # Nodes that have ONLY sea (not already connected to land)
+    sea_only_nodes = sea_node_ids - land_node_ids
+    
+    # For each sea-only node, find nearest land node and add a port connection
+    port_edges_added = 0
+    PORT_SEARCH_RADIUS = 20  # km - max distance to search for land connection
+    
+    for sea_nid in sea_only_nodes:
+        sea_node = nodes_by_id[sea_nid]
+        sea_lat, sea_lon = sea_node['lat'], sea_node['lon']
+        
+        # Find nearest land node
+        best_land = None
+        best_dist = PORT_SEARCH_RADIUS
+        
+        for land_nid in land_node_ids:
+            if land_nid == sea_nid:
+                continue
+            land_node = nodes_by_id[land_nid]
+            dist = haversine_distance(sea_lat, sea_lon, land_node['lat'], land_node['lon'])
+            if dist < best_dist:
+                best_dist = dist
+                best_land = land_nid
+        
+        if best_land is not None:
+            land_node = nodes_by_id[best_land]
+            # Add a "port" edge connecting sea to land
+            edge_idx = len(edges)
+            port_edge = {
+                'from': sea_nid,
+                'to': best_land,
+                'length': round(best_dist, 3),
+                'type': 'port',  # Special type for land/sea transitions
+                'coords': [
+                    [round(sea_lat, 5), round(sea_lon, 5)],
+                    [round(land_node['lat'], 5), round(land_node['lon'], 5)]
+                ]
+            }
+            edges.append(port_edge)
+            port_edges_added += 1
+            
+            # Add to spatial index
+            for coord in port_edge['coords']:
+                lat, lon = coord
+                cell = grid_cell(lat, lon)
+                if edge_idx not in spatial_index[cell]:
+                    spatial_index[cell].append(edge_idx)
+    
+    print(f"Added {port_edges_added} port connector edges")
+    
     # Convert nodes dict to array (sorted by id)
     nodes_array = [None] * len(nodes)
     for key, node in nodes.items():

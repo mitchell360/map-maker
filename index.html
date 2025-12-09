@@ -314,8 +314,9 @@ async function loadItinereGraph(){
       itinereAdjMixed[e.from].push(edgeData);
       itinereAdjMixed[e.to].push(edgeDataReverse);
       
-      // Land adjacency excludes sea lanes (includes land + river)
-      if(e.type!=='sea'){
+      // Land adjacency excludes sea lanes AND port connectors (includes land + river)
+      // Port edges only appear in mixed mode since they enable land/sea transitions
+      if(e.type!=='sea'&&e.type!=='port'){
         itinereAdjLand[e.from].push(edgeData);
         itinereAdjLand[e.to].push(edgeDataReverse);
       }
