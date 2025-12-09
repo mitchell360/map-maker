@@ -226,8 +226,47 @@ drawerHandle.addEventListener('touchend',e=>{
 // Click backdrop to close
 drawerBackdrop.addEventListener('click',closeDrawer);
 
-// Geocoding
+// Local coordinate dictionary (loaded from coordinates.json)
+let localCoords=null;
+
+// Load local coordinates dictionary
+async function loadLocalCoords(){
+  try{
+    const r=await fetch('coordinates.json');
+    if(r.ok){
+      const data=await r.json();
+      localCoords=data.locations||[];
+      console.log(`Loaded ${localCoords.length} local coordinates`);
+    }
+  }catch(e){console.log('Local coordinates not available, using Nominatim only');}
+}
+
+// Normalize location string for matching
+function normalizeLocation(q){
+  return q.toLowerCase().trim().replace(/\s+/g,' ').replace(/,\s*/g,',');
+}
+
+// Check local dictionary for coordinates
+function lookupLocalCoords(q){
+  if(!localCoords)return null;
+  const normalized=normalizeLocation(q);
+  for(const loc of localCoords){
+    for(const name of loc.names){
+      if(normalizeLocation(name)===normalized){
+        return{lat:loc.lat,lon:loc.lon,display:name+' (local)'};
+      }
+    }
+  }
+  return null;
+}
+
+// Geocoding - check local dictionary first, then Nominatim
 async function geocode(q){
+  // Check local dictionary first (instant)
+  const local=lookupLocalCoords(q);
+  if(local)return local;
+  
+  // Fall back to Nominatim API (rate-limited)
   const url='https://nominatim.openstreetmap.org/search?format=json&limit=1&q='+encodeURIComponent(q);
   const r=await fetch(url,{headers:{'Accept-Language':'en','User-Agent':'URL-Map/1.0'}});
   if(!r.ok)return null;
@@ -271,6 +310,9 @@ function hideLoading(){
 // Initialize map
 (async function(){
   updateLoading('Initializing map...');
+  
+  // Load local coordinates dictionary first (for fast geocoding)
+  await loadLocalCoords();
   
   const map=L.map('map',{zoomControl:true}).setView([20,0],2);
   const dare=L.tileLayer('https://dh.gu.se/tiles/imperium/{z}/{x}/{y}.png',{minZoom:4,maxZoom:11,attribution:'© <a href="https://dh.gu.se/dare/">Digital Atlas of the Roman Empire</a>'}).addTo(map);
@@ -734,7 +776,7 @@ function hideLoading(){
         return ratio<1.35;
       }
       
-      // Analyze each leg for water crossings
+      // Analyze each leg for water crossings and draw water routes
       const legWaterInfo=[];
       for(let i=0;i<chronoCoords.length-1;i++){
         const start=chronoCoords[i];
@@ -742,6 +784,23 @@ function hideLoading(){
         const routeDist=legDistances[i]||0;
         const straightDist=haversineDistance(start,end);
         const isWater=isWaterCrossing(start,end,routeDist);
+        
+        // Draw straight-line water crossing route (dashed cyan) for detected sea segments
+        if(isWater){
+          const waterLatlngs=[[start.lat,start.lon],[end.lat,end.lon]];
+          // White background for visibility
+          L.polyline(waterLatlngs,{color:'#ffffff',weight:6,opacity:0.9}).addTo(travelLineAndTime);
+          // Cyan dashed line for water route
+          L.polyline(waterLatlngs,{color:'#06b6d4',weight:4,opacity:0.9,dashArray:'12,8'}).addTo(travelLineAndTime);
+          // Add anchor icon at midpoint
+          const midLat=(start.lat+end.lat)/2;
+          const midLon=(start.lon+end.lon)/2;
+          const anchorHtml='<div style="width:24px;height:24px;background:#06b6d4;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 2px 6px rgba(0,0,0,0.3),0 0 0 2px #fff">⚓</div>';
+          L.marker([midLat,midLon],{
+            icon:L.divIcon({className:'water-marker',html:anchorHtml,iconSize:[24,24],iconAnchor:[12,12]}),
+            interactive:false
+          }).addTo(travelLineAndTime);
+        }
         
         legWaterInfo.push({isWater,straightDist,routeDist:routeDist||straightDist});
       }
@@ -848,6 +907,17 @@ function hideLoading(){
           waterBreakdownHtml=`<div class="water-breakdown">⚓ Sea: ${waterKm} km (${waterDays}d @ 4 knots) | 🚶 Land: ${landKm} km (${landDays}d)</div>`;
         }
         
+        // Route legend showing line styles
+        const hasWaterCrossings=legWaterInfo.some(info=>info.isWater);
+        let legendHtml='';
+        if(hasWaterCrossings){
+          legendHtml=`<div style="margin-top:8px;padding-top:8px;border-top:1px solid #e5e7eb;font-size:11px;color:#6b7280">
+            <strong>Map Legend:</strong>
+            <span style="margin-left:8px"><span style="display:inline-block;width:20px;height:3px;background:#7c3aed;vertical-align:middle;margin-right:4px"></span>OSRM Route</span>
+            <span style="margin-left:8px"><span style="display:inline-block;width:20px;height:3px;background:#06b6d4;border-top:2px dashed #06b6d4;vertical-align:middle;margin-right:4px"></span>Sea Crossing</span>
+          </div>`;
+        }
+        
         const headerLabel=currentRouteMode==='water'?`${modeLabels[currentTransport]} + Sailing`:`${modeLabels[currentTransport]}`;
         
         travelTimeDiv.innerHTML=`
@@ -855,7 +925,7 @@ function hideLoading(){
             <div><strong>Travel Time (${headerLabel}):</strong> ${totalTimeStr.trim()} <span style="font-size:12px;color:#6b7280">(${totalDistKm} km)</span></div>
             <button class="distance-info-toggle" onclick="this.parentElement.nextElementSibling.classList.toggle('expanded');this.textContent=this.textContent==='▼'?'▲':'▼'">▼</button>
           </div>
-          <div class="distance-info-details">${legsHtml}${waterBreakdownHtml}</div>
+          <div class="distance-info-details">${legsHtml}${waterBreakdownHtml}${legendHtml}</div>
           ${routeModeHtml}
           ${transportHtml}
         `;

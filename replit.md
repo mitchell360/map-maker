@@ -25,6 +25,9 @@ The tool uses a hybrid architecture with a static frontend and a Flask backend f
 
 **Technical Implementations:**
 - **URL-Driven Customization:** All features are controllable via query parameters, with `chronoLocationsAndLabels` and `referenceLocationsAndLabels` using a `Location~Label|Location~Label` format to eliminate count mismatch errors.
+- **Fast Local Geocoding:** A `coordinates.json` file contains 90+ pre-computed coordinates for common biblical/historical locations, enabling instant lookup without API calls. Falls back to Nominatim API for unknown locations.
+- **Dual Route Display:** Both OSRM land routes (purple solid) and straight-line sea crossing routes (cyan dashed with anchor icons) are drawn simultaneously when water crossings are detected, allowing visual comparison.
+- **Water Crossing Detection:** Uses OSRM route vs. straight-line distance ratio heuristic (ratio < 1.35 indicates ferry/water usage).
 - **Geocoding Best Practices:** `llm.md` includes detailed best practices for geocoding, addressing issues like province/city center discrepancies and ancient city names, including a "Coordinate Override" fallback.
 - **Client-side Cache-busting:** For Replit development, a timestamp-based cache-busting mechanism is appended to URLs to ensure fresh previews.
 - **Static Deployment:** Designed for easy deployment to GitHub Pages, serving static files directly without a backend.
@@ -34,9 +37,10 @@ The tool uses a hybrid architecture with a static frontend and a Flask backend f
 - `llm.md`: LLM instruction documentation (static, web standard).
 - `README.md`: GitHub-facing project documentation.
 - `server.py`: Flask backend with screenshot API (Replit only).
+- `coordinates.json`: Pre-computed coordinates for 90+ biblical/historical locations (fast geocoding).
 - `roman_roads.ndjson`: itiner-e Roman road network data (16,554 segments, 39MB).
 - `country_borders.geojson`: Natural Earth country boundary data (local).
-- `sailing_data.json`: Mendeley ancient Mediterranean sailing routes (83 ports, 361 routes).
+- `sailing_routes.json`: Mendeley ancient Mediterranean sailing routes (58 ports, 257 routes).
 
 ## External Dependencies
 - **Mapping Library:** Leaflet.js (CDN-hosted)

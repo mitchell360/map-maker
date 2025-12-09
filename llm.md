@@ -2,8 +2,8 @@
 
 **Service:** Historical Map Visualization  
 **Base URL:** `https://mitchell360.com/map-maker/`  
-**Last Updated:** 2025-12-08  
-**Version:** 2.3 (Water Routing + Maritime Overlays)
+**Last Updated:** 2025-12-09  
+**Version:** 2.4 (Local Geocoding + Dual Route Display)
 
 ---
 
@@ -28,7 +28,19 @@ This is a historical map visualization service that displays locations on ancien
 
 ## 🚨 CRITICAL: Geocoding Best Practices
 
-The map uses OpenStreetMap's geocoding API, which works with **modern place names only**.
+The map uses a **local coordinate dictionary** for common biblical/historical locations (instant lookup), with fallback to OpenStreetMap's Nominatim API.
+
+### Fast Geocoding with Local Dictionary
+The system includes 90+ pre-computed coordinates for frequently used locations including:
+- Paul's missionary journey cities (Antioch, Philippi, Ephesus, Corinth, Rome, etc.)
+- Seven Churches of Revelation (Ephesus, Smyrna, Pergamum, Thyatira, Sardis, Philadelphia, Laodicea)
+- Biblical landmarks (Jerusalem, Bethlehem, Nazareth, Sea of Galilee, etc.)
+- Mediterranean ports and islands (Cyprus, Crete, Malta, Rhodes, etc.)
+
+**Benefit:** Locations in the dictionary resolve instantly without API calls, significantly improving load times.
+
+### Nominatim API Fallback
+For locations not in the local dictionary, the system falls back to OpenStreetMap's geocoding API, which works with **modern place names only**.
 
 ### ✅ Always Use Modern City Names in the Location Field
 
@@ -467,11 +479,21 @@ When "Travel Line and Time" overlay is enabled, you can choose how the journey h
 - **Land Only** - Uses OSRM road routing (note: OSRM includes modern ferries, so displayed distances reflect ferry-assisted routes)
 - **Use Water** - Detects Mediterranean crossings and calculates sailing time at 4 knots (7.4 km/h)
 
+**Dual Route Display:**
+Both routes are drawn on the map simultaneously when water crossings are detected:
+- **Purple solid lines** - OSRM calculated route (land roads, may include ferry connections)
+- **Cyan dashed lines** - Straight-line sea crossing routes with anchor (⚓) icons at midpoints
+
+This allows users to visually compare land vs. sea routes. The Route Type toggle controls which distance/time calculation is shown in the info box.
+
 **Water Crossing Detection:**
 The system detects water crossings by analyzing the OSRM route vs. straight-line distance ratio. Since OSRM includes modern ferries, a LOW ratio (< 1.35) indicates the route used a near-direct ferry crossing. True land-only routes going around water bodies have higher ratios (1.5-3x). Detection requires:
 - Segment midpoint within Mediterranean basin (lat 30-46, lon -6 to 36)
 - Straight-line distance > 100 km
 - OSRM route/straight-line ratio < 1.35
+
+**Map Legend:**
+When water crossings are detected, a legend appears in the travel info panel explaining line styles.
 
 When "Use Water" is selected:
 - Detected water segments use straight-line distance at sailing speed (4 knots)

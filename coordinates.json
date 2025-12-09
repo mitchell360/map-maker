@@ -1,0 +1,469 @@
+{
+  "locations": [
+    {
+      "names": ["Antioch,Turkey", "Antioch, Turkey", "Antakya", "Antakya,Turkey", "Antioch Syria", "Syrian Antioch", "Antioch on the Orontes"],
+      "lat": 36.2021,
+      "lon": 36.1602
+    },
+    {
+      "names": ["Philippi,Greece", "Philippi, Greece", "Filippoi", "Philippi Macedonia", "Philippi"],
+      "lat": 41.0114,
+      "lon": 24.2872
+    },
+    {
+      "names": ["Ephesus,Turkey", "Ephesus, Turkey", "Ephesus", "Selcuk", "Selçuk", "Efes"],
+      "lat": 37.9493,
+      "lon": 27.3638
+    },
+    {
+      "names": ["Rome,Italy", "Rome, Italy", "Rome", "Roma"],
+      "lat": 41.9028,
+      "lon": 12.4964
+    },
+    {
+      "names": ["Jerusalem,Israel", "Jerusalem, Israel", "Jerusalem", "Yerushalayim"],
+      "lat": 31.7683,
+      "lon": 35.2137
+    },
+    {
+      "names": ["Damascus,Syria", "Damascus, Syria", "Damascus", "Dimashq"],
+      "lat": 33.5138,
+      "lon": 36.2765
+    },
+    {
+      "names": ["Corinth,Greece", "Corinth, Greece", "Corinth", "Korinthos", "Ancient Corinth"],
+      "lat": 37.9060,
+      "lon": 22.8788
+    },
+    {
+      "names": ["Athens,Greece", "Athens, Greece", "Athens", "Athina"],
+      "lat": 37.9838,
+      "lon": 23.7275
+    },
+    {
+      "names": ["Thessalonica,Greece", "Thessalonica, Greece", "Thessalonica", "Thessaloniki", "Salonika"],
+      "lat": 40.6401,
+      "lon": 22.9444
+    },
+    {
+      "names": ["Tarsus,Turkey", "Tarsus, Turkey", "Tarsus"],
+      "lat": 36.9164,
+      "lon": 34.8950
+    },
+    {
+      "names": ["Caesarea,Israel", "Caesarea, Israel", "Caesarea Maritima", "Caesarea"],
+      "lat": 32.5000,
+      "lon": 34.8903
+    },
+    {
+      "names": ["Joppa,Israel", "Joppa, Israel", "Joppa", "Jaffa", "Yafo", "Tel Aviv-Yafo"],
+      "lat": 32.0533,
+      "lon": 34.7518
+    },
+    {
+      "names": ["Iconium,Turkey", "Iconium, Turkey", "Iconium", "Konya"],
+      "lat": 37.8746,
+      "lon": 32.4932
+    },
+    {
+      "names": ["Lystra,Turkey", "Lystra, Turkey", "Lystra"],
+      "lat": 37.5667,
+      "lon": 32.3333
+    },
+    {
+      "names": ["Derbe,Turkey", "Derbe, Turkey", "Derbe"],
+      "lat": 37.3500,
+      "lon": 33.3500
+    },
+    {
+      "names": ["Perga,Turkey", "Perga, Turkey", "Perga", "Perge"],
+      "lat": 36.9608,
+      "lon": 30.8539
+    },
+    {
+      "names": ["Attalia,Turkey", "Attalia, Turkey", "Attalia", "Antalya"],
+      "lat": 36.8969,
+      "lon": 30.7133
+    },
+    {
+      "names": ["Troas,Turkey", "Troas, Turkey", "Troas", "Alexandria Troas"],
+      "lat": 39.7556,
+      "lon": 26.1583
+    },
+    {
+      "names": ["Miletus,Turkey", "Miletus, Turkey", "Miletus", "Milet"],
+      "lat": 37.5306,
+      "lon": 27.2781
+    },
+    {
+      "names": ["Patmos,Greece", "Patmos, Greece", "Patmos"],
+      "lat": 37.3106,
+      "lon": 26.5458
+    },
+    {
+      "names": ["Salamis,Cyprus", "Salamis, Cyprus", "Salamis"],
+      "lat": 35.1833,
+      "lon": 33.9000
+    },
+    {
+      "names": ["Paphos,Cyprus", "Paphos, Cyprus", "Paphos", "Pafos"],
+      "lat": 34.7556,
+      "lon": 32.4039
+    },
+    {
+      "names": ["Cyprus", "Island of Cyprus"],
+      "lat": 35.1264,
+      "lon": 33.4299
+    },
+    {
+      "names": ["Crete,Greece", "Crete, Greece", "Crete", "Kriti"],
+      "lat": 35.2401,
+      "lon": 24.8093
+    },
+    {
+      "names": ["Malta", "Melita"],
+      "lat": 35.9375,
+      "lon": 14.3754
+    },
+    {
+      "names": ["Syracuse,Italy", "Syracuse, Italy", "Syracuse", "Siracusa"],
+      "lat": 37.0755,
+      "lon": 15.2866
+    },
+    {
+      "names": ["Rhegium,Italy", "Rhegium, Italy", "Rhegium", "Reggio Calabria"],
+      "lat": 38.1114,
+      "lon": 15.6472
+    },
+    {
+      "names": ["Puteoli,Italy", "Puteoli, Italy", "Puteoli", "Pozzuoli"],
+      "lat": 40.8207,
+      "lon": 14.1221
+    },
+    {
+      "names": ["Berea,Greece", "Berea, Greece", "Berea", "Beroea", "Veria"],
+      "lat": 40.5236,
+      "lon": 22.2042
+    },
+    {
+      "names": ["Neapolis,Greece", "Neapolis, Greece", "Neapolis", "Kavala"],
+      "lat": 40.9360,
+      "lon": 24.4128
+    },
+    {
+      "names": ["Amphipolis,Greece", "Amphipolis, Greece", "Amphipolis"],
+      "lat": 40.8167,
+      "lon": 23.8500
+    },
+    {
+      "names": ["Apollonia,Greece", "Apollonia, Greece", "Apollonia"],
+      "lat": 40.7167,
+      "lon": 23.5333
+    },
+    {
+      "names": ["Colossae,Turkey", "Colossae, Turkey", "Colossae", "Colosse"],
+      "lat": 37.7875,
+      "lon": 29.2614
+    },
+    {
+      "names": ["Laodicea,Turkey", "Laodicea, Turkey", "Laodicea", "Laodikeia"],
+      "lat": 37.8356,
+      "lon": 29.1086
+    },
+    {
+      "names": ["Hierapolis,Turkey", "Hierapolis, Turkey", "Hierapolis", "Pamukkale"],
+      "lat": 37.9256,
+      "lon": 29.1242
+    },
+    {
+      "names": ["Smyrna,Turkey", "Smyrna, Turkey", "Smyrna", "Izmir"],
+      "lat": 38.4192,
+      "lon": 27.1287
+    },
+    {
+      "names": ["Pergamum,Turkey", "Pergamum, Turkey", "Pergamum", "Pergamon", "Bergama"],
+      "lat": 39.1217,
+      "lon": 27.1839
+    },
+    {
+      "names": ["Thyatira,Turkey", "Thyatira, Turkey", "Thyatira", "Akhisar"],
+      "lat": 38.9200,
+      "lon": 27.8400
+    },
+    {
+      "names": ["Sardis,Turkey", "Sardis, Turkey", "Sardis", "Sart"],
+      "lat": 38.4883,
+      "lon": 28.0406
+    },
+    {
+      "names": ["Philadelphia,Turkey", "Philadelphia, Turkey", "Philadelphia", "Alasehir", "Alaşehir"],
+      "lat": 38.3483,
+      "lon": 28.5172
+    },
+    {
+      "names": ["Galatia,Turkey", "Galatia, Turkey", "Galatia"],
+      "lat": 39.5000,
+      "lon": 32.0000
+    },
+    {
+      "names": ["Cappadocia,Turkey", "Cappadocia, Turkey", "Cappadocia", "Kapadokya"],
+      "lat": 38.6431,
+      "lon": 34.8289
+    },
+    {
+      "names": ["Antioch Pisidia,Turkey", "Antioch Pisidia, Turkey", "Pisidian Antioch", "Antioch of Pisidia", "Yalvac"],
+      "lat": 38.2833,
+      "lon": 31.1833
+    },
+    {
+      "names": ["Bethlehem,Israel", "Bethlehem, Israel", "Bethlehem", "Beit Lahm"],
+      "lat": 31.7054,
+      "lon": 35.2024
+    },
+    {
+      "names": ["Nazareth,Israel", "Nazareth, Israel", "Nazareth"],
+      "lat": 32.6996,
+      "lon": 35.3035
+    },
+    {
+      "names": ["Capernaum,Israel", "Capernaum, Israel", "Capernaum", "Kfar Nahum"],
+      "lat": 32.8803,
+      "lon": 35.5750
+    },
+    {
+      "names": ["Galilee,Israel", "Galilee, Israel", "Sea of Galilee", "Lake Tiberias", "Kinneret"],
+      "lat": 32.8231,
+      "lon": 35.5878
+    },
+    {
+      "names": ["Samaria,Israel", "Samaria, Israel", "Samaria", "Sebastia"],
+      "lat": 32.2747,
+      "lon": 35.1903
+    },
+    {
+      "names": ["Jericho,Israel", "Jericho, Israel", "Jericho"],
+      "lat": 31.8667,
+      "lon": 35.4500
+    },
+    {
+      "names": ["Bethany,Israel", "Bethany, Israel", "Bethany", "Al-Eizariya"],
+      "lat": 31.7700,
+      "lon": 35.2600
+    },
+    {
+      "names": ["Alexandria,Egypt", "Alexandria, Egypt", "Alexandria", "Al Iskandariya"],
+      "lat": 31.2001,
+      "lon": 29.9187
+    },
+    {
+      "names": ["Cyrene,Libya", "Cyrene, Libya", "Cyrene", "Shahhat"],
+      "lat": 32.8242,
+      "lon": 21.8583
+    },
+    {
+      "names": ["Tyre,Lebanon", "Tyre, Lebanon", "Tyre", "Sur"],
+      "lat": 33.2705,
+      "lon": 35.2038
+    },
+    {
+      "names": ["Sidon,Lebanon", "Sidon, Lebanon", "Sidon", "Saida"],
+      "lat": 33.5617,
+      "lon": 35.3714
+    },
+    {
+      "names": ["Ptolemais,Israel", "Ptolemais, Israel", "Ptolemais", "Acre", "Akko"],
+      "lat": 32.9261,
+      "lon": 35.0820
+    },
+    {
+      "names": ["Assos,Turkey", "Assos, Turkey", "Assos", "Behramkale"],
+      "lat": 39.4900,
+      "lon": 26.3400
+    },
+    {
+      "names": ["Mitylene,Greece", "Mitylene, Greece", "Mitylene", "Mytilene", "Lesbos"],
+      "lat": 39.1047,
+      "lon": 26.5536
+    },
+    {
+      "names": ["Chios,Greece", "Chios, Greece", "Chios"],
+      "lat": 38.3681,
+      "lon": 26.1356
+    },
+    {
+      "names": ["Samos,Greece", "Samos, Greece", "Samos"],
+      "lat": 37.7579,
+      "lon": 26.9750
+    },
+    {
+      "names": ["Cos,Greece", "Cos, Greece", "Cos", "Kos"],
+      "lat": 36.8933,
+      "lon": 26.9878
+    },
+    {
+      "names": ["Rhodes,Greece", "Rhodes, Greece", "Rhodes", "Rhodos"],
+      "lat": 36.4341,
+      "lon": 28.2176
+    },
+    {
+      "names": ["Patara,Turkey", "Patara, Turkey", "Patara"],
+      "lat": 36.2617,
+      "lon": 29.3133
+    },
+    {
+      "names": ["Myra,Turkey", "Myra, Turkey", "Myra", "Demre"],
+      "lat": 36.2556,
+      "lon": 29.9833
+    },
+    {
+      "names": ["Cnidus,Turkey", "Cnidus, Turkey", "Cnidus", "Knidos"],
+      "lat": 36.6861,
+      "lon": 27.3764
+    },
+    {
+      "names": ["Fair Havens,Crete", "Fair Havens, Crete", "Fair Havens", "Kaloi Limenes"],
+      "lat": 34.9333,
+      "lon": 24.7833
+    },
+    {
+      "names": ["Phoenix,Crete", "Phoenix, Crete", "Phoenix", "Loutro"],
+      "lat": 35.2000,
+      "lon": 24.0833
+    },
+    {
+      "names": ["Lasea,Crete", "Lasea, Crete", "Lasea"],
+      "lat": 34.9500,
+      "lon": 24.8167
+    },
+    {
+      "names": ["Adramyttium,Turkey", "Adramyttium, Turkey", "Adramyttium", "Edremit"],
+      "lat": 39.5961,
+      "lon": 27.0247
+    },
+    {
+      "names": ["Seleucia,Turkey", "Seleucia, Turkey", "Seleucia Pieria", "Seleucia"],
+      "lat": 36.1167,
+      "lon": 35.9333
+    },
+    {
+      "names": ["Lydda,Israel", "Lydda, Israel", "Lydda", "Lod"],
+      "lat": 31.9514,
+      "lon": 34.8883
+    },
+    {
+      "names": ["Sharon,Israel", "Sharon, Israel", "Plain of Sharon", "Sharon"],
+      "lat": 32.3000,
+      "lon": 34.8500
+    },
+    {
+      "names": ["Antipatris,Israel", "Antipatris, Israel", "Antipatris", "Tel Afek"],
+      "lat": 32.1000,
+      "lon": 34.9333
+    },
+    {
+      "names": ["Hebron,Israel", "Hebron, Israel", "Hebron", "Al-Khalil"],
+      "lat": 31.5326,
+      "lon": 35.0998
+    },
+    {
+      "names": ["Beersheba,Israel", "Beersheba, Israel", "Beersheba", "Be'er Sheva"],
+      "lat": 31.2518,
+      "lon": 34.7913
+    },
+    {
+      "names": ["Gaza,Palestine", "Gaza, Palestine", "Gaza"],
+      "lat": 31.5017,
+      "lon": 34.4668
+    },
+    {
+      "names": ["Babylon,Iraq", "Babylon, Iraq", "Babylon"],
+      "lat": 32.5364,
+      "lon": 44.4208
+    },
+    {
+      "names": ["Nineveh,Iraq", "Nineveh, Iraq", "Nineveh", "Mosul"],
+      "lat": 36.3600,
+      "lon": 43.1500
+    },
+    {
+      "names": ["Ur,Iraq", "Ur, Iraq", "Ur of the Chaldees", "Ur"],
+      "lat": 30.9628,
+      "lon": 46.1031
+    },
+    {
+      "names": ["Haran,Turkey", "Haran, Turkey", "Haran", "Harran"],
+      "lat": 36.8636,
+      "lon": 39.0322
+    },
+    {
+      "names": ["Mount Sinai,Egypt", "Mount Sinai, Egypt", "Mount Sinai", "Jebel Musa"],
+      "lat": 28.5392,
+      "lon": 33.9750
+    },
+    {
+      "names": ["Petra,Jordan", "Petra, Jordan", "Petra"],
+      "lat": 30.3285,
+      "lon": 35.4444
+    },
+    {
+      "names": ["Decapolis", "Ten Cities", "Decapolis Region"],
+      "lat": 32.6500,
+      "lon": 35.9000
+    },
+    {
+      "names": ["Mount of Olives,Israel", "Mount of Olives, Israel", "Mount of Olives", "Har HaZeitim"],
+      "lat": 31.7789,
+      "lon": 35.2442
+    },
+    {
+      "names": ["Golgotha,Israel", "Golgotha, Israel", "Golgotha", "Calvary"],
+      "lat": 31.7785,
+      "lon": 35.2296
+    },
+    {
+      "names": ["Emmaus,Israel", "Emmaus, Israel", "Emmaus"],
+      "lat": 31.8389,
+      "lon": 34.9894
+    },
+    {
+      "names": ["Cenchreae,Greece", "Cenchreae, Greece", "Cenchreae", "Kechries"],
+      "lat": 37.8833,
+      "lon": 22.9833
+    },
+    {
+      "names": ["Nicopolis,Greece", "Nicopolis, Greece", "Nicopolis"],
+      "lat": 38.9500,
+      "lon": 20.7167
+    },
+    {
+      "names": ["Dalmatia", "Illyricum", "Dalmatia Region"],
+      "lat": 43.5000,
+      "lon": 16.5000
+    },
+    {
+      "names": ["Spain", "Hispania"],
+      "lat": 40.4168,
+      "lon": -3.7038
+    },
+    {
+      "names": ["Philippi Forum,Greece", "Forum of Philippi"],
+      "lat": 41.0117,
+      "lon": 24.2875
+    },
+    {
+      "names": ["Appian Way,Italy", "Via Appia", "Appian Way"],
+      "lat": 41.8500,
+      "lon": 12.5500
+    },
+    {
+      "names": ["Forum of Appius,Italy", "Forum of Appius", "Foro Appio"],
+      "lat": 41.3833,
+      "lon": 13.0500
+    },
+    {
+      "names": ["Three Taverns,Italy", "Three Taverns", "Tres Tabernae"],
+      "lat": 41.5333,
+      "lon": 12.8667
+    }
+  ]
+}
