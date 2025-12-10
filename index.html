@@ -62,7 +62,7 @@
     
     /* Instructions link - responsive */
     /* Instructions button - always shows as ? in upper right on all devices */
-    .instructions-link{position:absolute;top:10px;left:10px;z-index:1100;background:#fff;border-radius:50%;box-shadow:0 2px 12px rgba(0,0,0,.2);border:2px solid #0369a1;padding:0;width:36px;height:36px;display:flex;align-items:center;justify-content:center}
+    .instructions-link{position:absolute;top:90px;left:10px;z-index:1100;background:#fff;border-radius:50%;box-shadow:0 2px 12px rgba(0,0,0,.2);border:2px solid #0369a1;padding:0;width:36px;height:36px;display:flex;align-items:center;justify-content:center}
     .instructions-link a{color:#0369a1;text-decoration:none;font-weight:700;font-size:20px;display:flex;width:100%;height:100%;align-items:center;justify-content:center}
     .instructions-link a:hover{background:#f0f9ff;border-radius:50%}
     
@@ -1427,10 +1427,11 @@ function hideLoading(){
         checkbox.addEventListener('change',function(){
           if(this.checked){
             layer.addTo(map);
-            // Trigger lazy-load if available
-            if(lazyLoadMap[id])lazyLoadMap[id]();
+            // Fire event which triggers lazy-load and travel time display
+            map.fire('overlayadd',{layer});
           }else{
             map.removeLayer(layer);
+            map.fire('overlayremove',{layer});
           }
         });
       }
@@ -1444,8 +1445,8 @@ function hideLoading(){
         const layer=layerMap[id];
         if(layer){
           layer.addTo(map);
-          // Trigger lazy-load if available
-          if(lazyLoadMap[id])lazyLoadMap[id]();
+          // Fire event which triggers lazy-load and travel time display
+          map.fire('overlayadd',{layer});
         }
       }
     });
@@ -1884,6 +1885,11 @@ function hideLoading(){
           travelTimeDiv.style.display='none';
         }
       });
+      
+      // Show travel time if layer was already added during page load
+      if(map.hasLayer(travelLineAndTime)){
+        travelTimeDiv.style.display='block';
+      }
     }
   }else{map.setView([37.8,20],5);}
   
