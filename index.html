@@ -1332,7 +1332,7 @@ function hideLoading(){
             <span class="layer-section-arrow">▼</span>
           </div>
           <div class="layer-section-items">
-            <div class="layer-item"><input type="checkbox" id="layer-roads" checked><label for="layer-roads">Roman Roads</label></div>
+            <div class="layer-item"><input type="checkbox" id="layer-roads"><label for="layer-roads">Roman Roads</label></div>
             <div class="layer-item"><input type="checkbox" id="layer-sealanes"><label for="layer-sealanes">Sea Lanes</label></div>
             <div class="layer-item"><input type="checkbox" id="layer-bridges"><label for="layer-bridges">Bridges</label></div>
             <div class="layer-item"><input type="checkbox" id="layer-aqueducts"><label for="layer-aqueducts">Aqueducts</label></div>
@@ -1368,7 +1368,7 @@ function hideLoading(){
           <div class="layer-section-items">
             <div class="layer-item"><input type="checkbox" id="layer-rivers" checked><label for="layer-rivers">Rivers</label></div>
             <div class="layer-item"><input type="checkbox" id="layer-lakes" checked><label for="layer-lakes">Lakes</label></div>
-            <div class="layer-item"><input type="checkbox" id="layer-seas"><label for="layer-seas">Sea Names</label></div>
+            <div class="layer-item"><input type="checkbox" id="layer-seas" checked><label for="layer-seas">Sea Names</label></div>
             <div class="layer-item"><input type="checkbox" id="layer-sailing"><label for="layer-sailing">Sailing Routes</label></div>
           </div>
         </div>
@@ -1404,13 +1404,31 @@ function hideLoading(){
       'layer-sailing':sailingRoutes
     };
     
+    // Lazy-load function map
+    const lazyLoadMap={
+      'layer-roads':loadRomanRoads,
+      'layer-sealanes':loadSeaLanes,
+      'layer-bridges':loadAncientBridges,
+      'layer-aqueducts':loadAncientAqueducts,
+      'layer-famous-cities':loadFamousCities,
+      'layer-major-cities':loadMajorCities,
+      'layer-all-cities':loadAncientPlaces,
+      'layer-forts':loadAncientFortifications,
+      'layer-provinces':loadProvinces,
+      'layer-rivers':loadAncientRivers,
+      'layer-lakes':loadAncientLakes,
+      'layer-seas':loadAncientSeas,
+      'layer-sailing':loadSailingRoutes
+    };
+    
     Object.entries(layerMap).forEach(([id,layer])=>{
       const checkbox=panel.querySelector(`#${id}`);
       if(checkbox){
         checkbox.addEventListener('change',function(){
           if(this.checked){
             layer.addTo(map);
-            map.fire('overlayadd',{layer});
+            // Trigger lazy-load if available
+            if(lazyLoadMap[id])lazyLoadMap[id]();
           }else{
             map.removeLayer(layer);
           }
@@ -1419,14 +1437,15 @@ function hideLoading(){
     });
     
     // Apply default layers (checked by default)
-    const defaultLayers=['layer-travel','layer-roads','layer-famous-cities','layer-rivers','layer-lakes'];
+    const defaultLayers=['layer-travel','layer-famous-cities','layer-rivers','layer-lakes','layer-seas'];
     defaultLayers.forEach(id=>{
       const checkbox=panel.querySelector(`#${id}`);
       if(checkbox&&checkbox.checked){
         const layer=layerMap[id];
         if(layer){
           layer.addTo(map);
-          map.fire('overlayadd',{layer});
+          // Trigger lazy-load if available
+          if(lazyLoadMap[id])lazyLoadMap[id]();
         }
       }
     });
