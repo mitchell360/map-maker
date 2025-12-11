@@ -192,14 +192,8 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
   integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script>
-// Cache-busting: Auto-add version parameter to force fresh loads in Replit preview
-(function(){
-  const url=new URL(window.location.href);
-  if(!url.searchParams.has('_cb')){
-    url.searchParams.set('_cb',Date.now());
-    window.location.replace(url.toString());
-  }
-})();
+// Cache-busting removed - was causing page reload/blinking issues
+console.log('[Init] Page loading, URL:', window.location.href);
 
 // Utility functions
 function qs(name){const u=new URL(location.href);return u.searchParams.get(name);}
@@ -1281,6 +1275,7 @@ function hideLoading(){
   
   // Load layers when overlay is added
   map.on('overlayadd',function(e){
+    console.log('[OverlayAdd] Layer added:', e.layer);
     if(e.layer===romanRoads)loadRomanRoads();
     if(e.layer===seaLanes)loadSeaLanes();
     if(e.layer===sailingRoutes)loadSailingRoutes();
@@ -1296,8 +1291,13 @@ function hideLoading(){
     if(e.layer===ancientSeas)loadAncientSeas();
   });
   
+  map.on('overlayremove',function(e){
+    console.log('[OverlayRemove] Layer removed:', e.layer);
+  });
+  
   // Build custom layer control panel
   function buildLayerPanel(){
+    console.log('[LayerPanel] Building layer panel...');
     const panel=document.createElement('div');
     panel.className='layer-panel';
     panel.innerHTML=`
@@ -1376,10 +1376,16 @@ function hideLoading(){
       </div>
     `;
     document.body.appendChild(panel);
+    console.log('[LayerPanel] Panel appended to body, checking visibility...');
+    console.log('[LayerPanel] Panel element:', panel);
+    console.log('[LayerPanel] Panel computed style display:', window.getComputedStyle(panel).display);
+    console.log('[LayerPanel] Panel computed style visibility:', window.getComputedStyle(panel).visibility);
+    console.log('[LayerPanel] Panel computed style z-index:', window.getComputedStyle(panel).zIndex);
     
     // Base map switching
     panel.querySelectorAll('input[name="basemap"]').forEach(radio=>{
       radio.addEventListener('change',function(){
+        console.log('[LayerPanel] Base map changed to:', this.value);
         Object.values(baseMaps).forEach(l=>map.removeLayer(l));
         baseMaps[this.value].addTo(map);
         currentBaseMap=this.value;
@@ -1426,6 +1432,7 @@ function hideLoading(){
       const checkbox=panel.querySelector(`#${id}`);
       if(checkbox){
         checkbox.addEventListener('change',function(){
+          console.log('[LayerToggle] Checkbox changed:', id, 'checked:', this.checked);
           if(this.checked){
             layer.addTo(map);
             // Fire event which triggers lazy-load and travel time display
@@ -1440,11 +1447,13 @@ function hideLoading(){
     
     // Apply default layers (checked by default)
     const defaultLayers=['layer-travel','layer-famous-cities','layer-rivers','layer-lakes','layer-seas'];
+    console.log('[LayerPanel] Applying default layers:', defaultLayers);
     defaultLayers.forEach(id=>{
       const checkbox=panel.querySelector(`#${id}`);
       if(checkbox&&checkbox.checked){
         const layer=layerMap[id];
         if(layer){
+          console.log('[LayerPanel] Adding default layer:', id);
           layer.addTo(map);
           // Fire event which triggers lazy-load and travel time display
           map.fire('overlayadd',{layer});
@@ -1452,10 +1461,12 @@ function hideLoading(){
       }
     });
     
+    console.log('[LayerPanel] Panel setup complete');
     return panel;
   }
   
-  buildLayerPanel();
+  const layerPanelRef = buildLayerPanel();
+  console.log('[LayerPanel] buildLayerPanel returned:', layerPanelRef);
 
   // Default data using new combined format
   const defaultChronoData='Antioch,Turkey~Antioch%0A47-48 AD: Antioch, Syria%0A2025 AD: Antakya, Turkey%0A%0AAntioch served as the primary mission base for Paul\'s ministry to the Gentiles and was where believers were first called Christians|Philippi,Greece~Philippi%0A49-50 AD: Philippi, Macedonia%0A2025 AD: Filippoi, Greece%0A%0APhilippi was the first European city where Paul established a Christian congregation during his second missionary journey|Ephesus,Turkey~Ephesus%0A52-54 AD: Ephesus, Asia Minor%0A2025 AD: Selçuk, Turkey%0A%0APaul ministered in Ephesus for approximately three years during his third missionary journey|Rome,Italy~Rome%0A62 AD: Rome, Capitol of the Roman Empire%0A2025 AD: Rome, Italy%0A%0APaul was held under house arrest in Rome from approximately AD 60 to 62';
