@@ -34,30 +34,6 @@ outputType = "webview"
 localPort = 5000
 externalPort = 80
 
-[[ports]]
-localPort = 32821
-externalPort = 3001
-
-[[ports]]
-localPort = 34679
-externalPort = 5000
-
-[[ports]]
-localPort = 34835
-externalPort = 3003
-
-[[ports]]
-localPort = 42999
-externalPort = 4200
-
-[[ports]]
-localPort = 45445
-externalPort = 3002
-
-[[ports]]
-localPort = 45975
-externalPort = 3000
-
 [deployment]
 deploymentTarget = "static"
 run = ["python3", "server.py"]
