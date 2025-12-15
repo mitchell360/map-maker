@@ -729,6 +729,10 @@ function hideLoading(){
   map.createPane('journeyPane');
   map.getPane('journeyPane').style.zIndex=650; // Above markers (600) and overlays
   
+  // Create separate pane for journey labels (tooltips) above markers
+  map.createPane('journeyLabelPane');
+  map.getPane('journeyLabelPane').style.zIndex=700; // Above journey markers
+  
   // Base map layers
   const dareBackground=L.tileLayer('https://klokantech.github.io/dare-raster-tiles/background/{z}/{x}/{y}.png',{minZoom:0,maxZoom:11,attribution:'© DARE Background'});
   const dareHillshade=L.tileLayer('https://klokantech.github.io/dare-raster-tiles/hillshade/{z}/{x}/{y}.png',{minZoom:0,maxZoom:11,opacity:0.4});
@@ -1540,7 +1544,7 @@ function hideLoading(){
     
     const mk=L.marker([coord.lat,coord.lon],{icon:blueIcon,pane:'journeyPane'})
       .addTo(map)
-      .bindTooltip(locationName,{permanent:true,direction:'top',className:'marker-label',pane:'journeyPane'})
+      .bindTooltip(locationName,{permanent:true,direction:'top',className:'marker-label',pane:'journeyLabelPane'})
       .on('click',()=>openDrawer(html));
     
     allMarkers.push(mk);
@@ -1568,7 +1572,7 @@ function hideLoading(){
     
     const mk=L.marker([coord.lat,coord.lon],{icon:redIcon,pane:'journeyPane'})
       .addTo(map)
-      .bindTooltip(locationName,{permanent:true,direction:'top',className:'marker-label-reference',pane:'journeyPane'})
+      .bindTooltip(locationName,{permanent:true,direction:'top',className:'marker-label-reference',pane:'journeyLabelPane'})
       .on('click',()=>openDrawer(html));
     
     allMarkers.push(mk);
