@@ -1914,29 +1914,10 @@ function hideLoading(){
     }
   }else{map.setView([37.8,20],5);}
   
-  // Wait for map to be fully ready before hiding overlay
-  updateLoading('Loading map tiles...','Please wait');
-  
-  let overlayHidden=false;
-  function showMap(){
-    if(overlayHidden)return;
-    overlayHidden=true;
-    console.log('[Init] Map ready, hiding overlay');
-    updateLoading('Map ready!','');
-    setTimeout(hideLoading,200);
-  }
-  
-  // Hide overlay when map is idle (rendering complete)
-  map.once('idle',function(){
-    console.log('[Init] Map idle event');
-    showMap();
-  });
-  
-  // Fallback timeout in case idle doesn't fire
-  setTimeout(function(){
-    console.log('[Init] Timeout fallback');
-    showMap();
-  },2500);
+  // All routes calculated and map ready - hide loading overlay
+  console.log('[Init] All routes calculated, map ready');
+  updateLoading('Map ready!','');
+  setTimeout(hideLoading,300);
 })();
 </script>
 </body>
