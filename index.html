@@ -563,8 +563,54 @@ async function getItinereRoute(start,end,useMixed=true){
     hasSeaSegments:result.hasSeaSegments,
     edgeTypes:result.edgeTypes,
     landDistKm:result.landDistKm+connectorDistKm, // Connectors always land (walking to/from network)
-    seaDistKm:result.seaDistKm
+    seaDistKm:result.seaDistKm,
+    isFallback:false
   };
+}
+
+// OSRM fallback routing for locations outside Roman road network
+async function getOSRMRoute(start,end){
+  try{
+    const url=`https://router.project-osrm.org/route/v1/foot/${start.lon},${start.lat};${end.lon},${end.lat}?overview=full&geometries=geojson`;
+    console.log('[Routing] Trying OSRM fallback for route outside Roman network');
+    const response=await fetch(url);
+    if(!response.ok){
+      console.warn('[Routing] OSRM request failed:',response.status);
+      return null;
+    }
+    const data=await response.json();
+    if(data.code!=='Ok'||!data.routes||data.routes.length===0){
+      console.warn('[Routing] OSRM returned no route');
+      return null;
+    }
+    const route=data.routes[0];
+    const distanceKm=route.distance/1000;
+    console.log(`[Routing] OSRM fallback route: ${distanceKm.toFixed(1)} km`);
+    return{
+      distance:route.distance,
+      geometry:route.geometry,
+      hasSeaSegments:false,
+      edgeTypes:{land:1},
+      landDistKm:distanceKm,
+      seaDistKm:0,
+      isFallback:true // Flag to indicate this is a modern road approximation
+    };
+  }catch(err){
+    console.error('[Routing] OSRM fallback error:',err);
+    return null;
+  }
+}
+
+// Get route with fallback: try Roman roads first, then OSRM
+async function getRouteWithFallback(start,end,useMixed=true){
+  // Try itiner-e Roman road routing first
+  const romanRoute=await getItinereRoute(start,end,useMixed);
+  if(romanRoute&&romanRoute.distance>0){
+    return romanRoute;
+  }
+  // Fallback to OSRM modern routing
+  console.log('[Routing] Roman road routing failed, trying OSRM fallback');
+  return await getOSRMRoute(start,end);
 }
 
 // Find nearest port to a coordinate
