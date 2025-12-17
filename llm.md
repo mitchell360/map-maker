@@ -501,6 +501,9 @@ When "Travel Line and Time" overlay is enabled, you can choose how the journey h
 **Graph-Based Routing:**
 The system uses client-side Dijkstra shortest path on a preprocessed routing graph (11,031 nodes, 16,351 edges) built from the itiner-e Roman Roads dataset. This provides authentic ancient world routing without relying on external APIs.
 
+**OSRM Fallback Routing:**
+For locations outside the Roman road network (e.g., Mesopotamia, Arabia, Sinai Peninsula), the system automatically falls back to OSRM (Open Source Routing Machine) for modern road routing. Fallback routes are displayed with **dashed lines** to indicate they are modern approximations, not ancient Roman roads. A note in the travel info panel explains when fallback routes are used.
+
 **Connector Legs:**
 The straight-line distance from the user's location to the nearest road/port node is treated as land travel (walking to/from the network). This is semantically correct for historical travel.
 
