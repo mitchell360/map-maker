@@ -1662,9 +1662,9 @@ function hideLoading(){
   for(let i=0;i<chronoCoords.length-1;i++){
     updateLoading('Calculating travel routes...',`Route ${i+1} of ${chronoCoords.length-1}: ${chronoNames[i]} → ${chronoNames[i+1]}`);
     
-    // Calculate both land-only and mixed routes for this leg
-    const landRoute=await getItinereRoute(chronoCoords[i],chronoCoords[i+1],false); // Land only
-    const mixedRoute=await getItinereRoute(chronoCoords[i],chronoCoords[i+1],true);  // Land + sea
+    // Calculate both land-only and mixed routes for this leg (with OSRM fallback)
+    const landRoute=await getRouteWithFallback(chronoCoords[i],chronoCoords[i+1],false); // Land only
+    const mixedRoute=await getRouteWithFallback(chronoCoords[i],chronoCoords[i+1],true);  // Land + sea
     
     routeCache.land.push(landRoute);
     routeCache.water.push(mixedRoute);
@@ -1676,10 +1676,18 @@ function hideLoading(){
     
     if(route&&route.geometry){
       const latlngs=route.geometry.coordinates.map(c=>[c[1],c[0]]);
+      const isFallback=route.isFallback||false;
       
-      // Draw main path with white stroke for contrast (thinner lines)
-      L.polyline(latlngs,{color:'#ffffff',weight:5,opacity:0.9}).addTo(travelLineAndTime);
-      L.polyline(latlngs,{color:segmentColor,weight:3,opacity:0.95}).addTo(travelLineAndTime);
+      // Draw main path - dashed for fallback (modern roads), solid for Roman roads
+      if(isFallback){
+        // Dashed line for OSRM fallback (modern road approximation)
+        L.polyline(latlngs,{color:'#ffffff',weight:5,opacity:0.9,dashArray:'10,8'}).addTo(travelLineAndTime);
+        L.polyline(latlngs,{color:segmentColor,weight:3,opacity:0.95,dashArray:'10,8'}).addTo(travelLineAndTime);
+      }else{
+        // Solid line for Roman roads
+        L.polyline(latlngs,{color:'#ffffff',weight:5,opacity:0.9}).addTo(travelLineAndTime);
+        L.polyline(latlngs,{color:segmentColor,weight:3,opacity:0.95}).addTo(travelLineAndTime);
+      }
       
       // Calculate total path length
       let pathLength=0;
@@ -1716,7 +1724,8 @@ function hideLoading(){
         hasSea:mixedRoute?mixedRoute.hasSeaSegments:false,
         landRoute,mixedRoute,
         mixedLandKm:mixedRoute?(mixedRoute.landDistKm||0):0,
-        mixedSeaKm:mixedRoute?(mixedRoute.seaDistKm||0):0
+        mixedSeaKm:mixedRoute?(mixedRoute.seaDistKm||0):0,
+        isFallback:route.isFallback||false
       });
       
       totalDistance+=route.distance;
@@ -1772,13 +1781,19 @@ function hideLoading(){
           const info=legRouteInfo[i];
           const route=currentRouteMode==='water'?info.mixedRoute:info.landRoute;
           const segmentColor=legColors[i];
+          const isFallback=route&&route.isFallback;
           
           if(route&&route.geometry){
             const latlngs=route.geometry.coordinates.map(c=>[c[1],c[0]]);
             
-            // Draw main path
-            L.polyline(latlngs,{color:'#ffffff',weight:5,opacity:0.9}).addTo(travelLineAndTime);
-            L.polyline(latlngs,{color:segmentColor,weight:3,opacity:0.95}).addTo(travelLineAndTime);
+            // Draw main path - dashed for fallback (modern roads), solid for Roman roads
+            if(isFallback){
+              L.polyline(latlngs,{color:'#ffffff',weight:5,opacity:0.9,dashArray:'10,8'}).addTo(travelLineAndTime);
+              L.polyline(latlngs,{color:segmentColor,weight:3,opacity:0.95,dashArray:'10,8'}).addTo(travelLineAndTime);
+            }else{
+              L.polyline(latlngs,{color:'#ffffff',weight:5,opacity:0.9}).addTo(travelLineAndTime);
+              L.polyline(latlngs,{color:segmentColor,weight:3,opacity:0.95}).addTo(travelLineAndTime);
+            }
             
             // Calculate path length for badge placement
             let pathLength=0;
@@ -1901,10 +1916,18 @@ function hideLoading(){
         
         // Route legend showing line styles
         const hasWaterCrossings=currentRouteMode==='water'&&legRouteInfo.some(info=>info.hasSea);
+        const hasFallbackRoutes=legRouteInfo.some(info=>info.isFallback);
         let legendHtml='';
-        if(hasWaterCrossings){
+        if(hasWaterCrossings||hasFallbackRoutes){
+          let notes=[];
+          if(hasWaterCrossings){
+            notes.push('Route uses itiner-e Roman roads and ancient sea lanes for mixed land/water travel.');
+          }
+          if(hasFallbackRoutes){
+            notes.push('<span style="border-bottom:2px dashed #9333ea">Dashed lines</span> indicate routes outside the Roman road network (using modern road approximation).');
+          }
           legendHtml=`<div style="margin-top:8px;padding-top:8px;border-top:1px solid #e5e7eb;font-size:11px;color:#6b7280">
-            <strong>Note:</strong> Route uses itiner-e Roman roads and ancient sea lanes for mixed land/water travel.
+            <strong>Note:</strong> ${notes.join(' ')}
           </div>`;
         }
         
