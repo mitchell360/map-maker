@@ -115,6 +115,71 @@ Before constructing URLs with ancient locations:
 
 ---
 
+## 🏛️ Old Testament & Pre-Roman Locations
+
+**CRITICAL:** Old Testament locations (Exodus, Genesis, etc.) often have **no modern city equivalent**. Vague descriptions like "Northwest Saudi Arabia" or ancient names like "Midian" will geocode incorrectly or to random locations.
+
+### ⚠️ You MUST Use Coordinates for Pre-Roman Locations
+
+For any location that predates the Roman Empire or lacks a clear modern city, **always use the `@lat,lon` syntax**:
+
+```
+LocationName@latitude,longitude~Label
+```
+
+### 📍 Common Old Testament Location Coordinates
+
+Use these coordinates for frequently referenced biblical locations:
+
+| Ancient Location | Coordinates | Modern Reference | Use In URL |
+|-----------------|-------------|------------------|------------|
+| **Ur of the Chaldees** | 30.96, 46.10 | Tell el-Muqayyar, Iraq | `Ur@30.96,46.10~Ur of the Chaldees` |
+| **Haran** | 36.87, 39.03 | Harran, Turkey | `Haran@36.87,39.03~Haran` |
+| **Land of Midian** | 28.50, 35.00 | NW Saudi Arabia (near Gulf of Aqaba) | `Midian@28.50,35.00~Land of Midian` |
+| **Land of Goshen** | 30.85, 31.75 | Nile Delta, Egypt | `Goshen@30.85,31.75~Land of Goshen` |
+| **Mount Sinai** | 28.54, 33.97 | Sinai Peninsula, Egypt | `Sinai@28.54,33.97~Mount Sinai` |
+| **Kadesh Barnea** | 30.64, 34.42 | Negev Desert border | `Kadesh@30.64,34.42~Kadesh Barnea` |
+| **Beersheba** | 31.25, 34.79 | Be'er Sheva, Israel | `Beersheba@31.25,34.79~Beersheba` |
+| **Shechem** | 32.21, 35.28 | Nablus, West Bank | `Shechem@32.21,35.28~Shechem` |
+| **Bethel** | 31.93, 35.23 | Beitin, West Bank | `Bethel@31.93,35.23~Bethel` |
+| **Hebron** | 31.53, 35.10 | Al-Khalil, West Bank | `Hebron@31.53,35.10~Hebron` |
+| **Jericho** | 31.87, 35.44 | Ariha, West Bank | `Jericho@31.87,35.44~Jericho` |
+| **Shiloh** | 32.06, 35.29 | Khirbet Seilun, West Bank | `Shiloh@32.06,35.29~Shiloh` |
+| **Gilgal** | 31.84, 35.43 | Near Jericho | `Gilgal@31.84,35.43~Gilgal` |
+| **Peniel/Penuel** | 32.18, 35.68 | East of Jordan River | `Peniel@32.18,35.68~Peniel` |
+| **Succoth (Jordan Valley)** | 32.20, 35.55 | Tell Deir Alla, Jordan | `Succoth@32.20,35.55~Succoth` |
+| **Mahanaim** | 32.29, 35.70 | East of Jordan River | `Mahanaim@32.29,35.70~Mahanaim` |
+| **Dothan** | 32.42, 35.23 | Tell Dothan, West Bank | `Dothan@32.42,35.23~Dothan` |
+| **Susa (Persia)** | 32.19, 48.26 | Shush, Iran | `Susa@32.19,48.26~Susa` |
+| **Babylon** | 32.54, 44.42 | Hillah, Iraq | `Babylon@32.54,44.42~Babylon` |
+| **Nineveh** | 36.36, 43.15 | Mosul, Iraq | `Nineveh@36.36,43.15~Nineveh` |
+
+### ❌ Common Old Testament Geocoding Mistakes
+
+| ❌ WRONG | ✅ CORRECT | Why |
+|----------|-----------|-----|
+| `Midian` | `Midian@28.50,35.00~Midian` | "Midian" has no modern equivalent; geocodes to wrong location |
+| `Northwest Saudi Arabia` | `Midian@28.50,35.00~Land of Midian` | Vague region descriptions geocode unpredictably |
+| `Mount Sinai` | `Sinai@28.54,33.97~Mount Sinai` | Multiple "Mount Sinai" locations exist worldwide |
+| `Land of Goshen` | `Goshen@30.85,31.75~Land of Goshen` | Ancient region with no modern city name |
+| `Ur` | `Ur@30.96,46.10~Ur of the Chaldees` | "Ur" alone may geocode to wrong location |
+| `Babylon` | `Babylon@32.54,44.42~Babylon` | Multiple Babylons exist; use coordinates |
+
+### Example: Exodus Journey with Coordinates
+
+```
+chronoLocationsAndLabels=Goshen@30.85,31.75~Land of Goshen%0AThe Israelites in Egypt|Sinai@28.54,33.97~Mount Sinai%0AReceiving the Law|Kadesh@30.64,34.42~Kadesh Barnea%0A40 Years of Wandering|Jericho@31.87,35.44~Jericho%0ACrossing into the Promised Land
+```
+
+### Finding Coordinates for Other Locations
+
+1. **Search:** "ancient [LocationName] coordinates" or "[LocationName] biblical site coordinates"
+2. **Use Google Maps:** Right-click any location → "What's here?" shows coordinates
+3. **Reference:** bibleatlas.org, bibleplaces.com, or academic archaeology sources
+4. **Format:** Always use `latitude,longitude` (lat first, then lon)
+
+---
+
 ## Base URL Structure
 
 ```

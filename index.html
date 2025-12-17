@@ -726,6 +726,15 @@ function lookupLocalCoords(q){
   return null;
 }
 
+// Validate coordinates are within biblical/ancient world bounds
+// Rejects obviously wrong geocoding results (e.g., Atlantic Ocean, Americas)
+function isValidAncientWorldCoord(lat,lon){
+  // Expanded ancient world bounds: 0-60N, 30W-80E
+  // Covers: Mediterranean, Middle East, Mesopotamia, Egypt, Persia, Arabia, Ethiopia, India
+  const minLat=0,maxLat=60,minLon=-30,maxLon=80;
+  return lat>=minLat&&lat<=maxLat&&lon>=minLon&&lon<=maxLon;
+}
+
 // Geocoding - check local dictionary first, then Nominatim
 async function geocode(q){
   // Check local dictionary first (instant)
@@ -737,7 +746,16 @@ async function geocode(q){
   const r=await fetch(url,{headers:{'Accept-Language':'en','User-Agent':'URL-Map/1.0'}});
   if(!r.ok)return null;
   const j=await r.json();
-  if(j&&j.length)return{lat:parseFloat(j[0].lat),lon:parseFloat(j[0].lon),display:j[0].display_name};
+  if(j&&j.length){
+    const lat=parseFloat(j[0].lat);
+    const lon=parseFloat(j[0].lon);
+    // Validate result is within ancient world region
+    if(!isValidAncientWorldCoord(lat,lon)){
+      console.warn(`Geocoding rejected for "${q}": coordinates (${lat},${lon}) outside ancient world bounds. Use @lat,lon syntax for precise placement.`);
+      return null; // Reject bad coordinates
+    }
+    return{lat,lon,display:j[0].display_name};
+  }
   return null;
 }
 

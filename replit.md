@@ -40,6 +40,7 @@ The tool uses a hybrid architecture with a static frontend and a Flask backend f
 - **Accurate Travel Time Calculation:** Uses actual edge-type breakdown from routing to calculate land vs. sea distances. Sailing speed: 4 knots (7.4 km/h), land transport speeds configurable.
 - **URL-Driven Customization:** All features controllable via query parameters with `chronoLocationsAndLabels` and `referenceLocationsAndLabels` using `Location~Label|Location~Label` format.
 - **Fast Local Geocoding:** A `coordinates.json` file contains 90+ pre-computed coordinates for common biblical/historical locations.
+- **Coordinate Validation:** Geocoding results outside the ancient world bounds (0-60°N, 30°W-80°E) are rejected to prevent obviously wrong placements (e.g., Americas, Atlantic Ocean).
 - **Static Deployment:** Designed for easy deployment to GitHub Pages.
 
 **File Structure:**
