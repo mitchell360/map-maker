@@ -708,6 +708,18 @@ https://mitchell360.com/map-maker/screenshot?width=1200&height=1200&chronoLocati
 - Large/complex maps may take 5-10 seconds to render
 - Returns HTTP 500 if rendering fails
 
+### GitHub Pages Hosting
+
+The screenshot endpoint requires server-side rendering (Playwright/Chromium), which GitHub Pages cannot provide. When accessing `/screenshot` on GitHub Pages (`mitchell360.com/map-maker/screenshot`), the request automatically redirects to the Replit-hosted backend:
+
+```
+https://map-maker--mitchell360.replit.app/screenshot?[your-parameters]
+```
+
+This redirect preserves all URL parameters, so screenshot URLs work identically whether using:
+- `https://mitchell360.com/map-maker/screenshot?...` (redirects)
+- `https://map-maker--mitchell360.replit.app/screenshot?...` (direct)
+
 ---
 
 ## Final Validation Steps
