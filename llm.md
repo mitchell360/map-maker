@@ -648,6 +648,68 @@ The travel times displayed on the map dynamically recalculate when you change th
 
 ---
 
+## 📸 Screenshot API
+
+Generate PNG images of maps programmatically using the `/screenshot` endpoint.
+
+### Endpoint
+
+```
+https://mitchell360.com/map-maker/screenshot?[map-parameters]&width=[width]&height=[height]
+```
+
+### Parameters
+
+| Parameter | Required | Default | Range | Description |
+|-----------|----------|---------|-------|-------------|
+| `chronoLocationsAndLabels` | Yes* | - | - | Same format as interactive map |
+| `referenceLocationsAndLabels` | No | - | - | Same format as interactive map |
+| `title` | No | - | - | Map title (URL-encoded) |
+| `width` | No | 1200 | 400-2000 | Image width in pixels |
+| `height` | No | 800 | 300-1500 | Image height in pixels |
+
+*At least one location parameter required
+
+### How It Works
+
+1. Server renders the full interactive map with Playwright/Chromium
+2. Waits for all tiles, routes, and overlays to load
+3. Captures viewport as PNG image
+4. Returns image directly (Content-Type: image/png)
+
+### Example URLs
+
+**Basic screenshot (default 1200x800):**
+```
+https://mitchell360.com/map-maker/screenshot?title=Paul's%20Journey&chronoLocationsAndLabels=Rome,Italy~Rome%0A62 AD|Jerusalem,Israel~Jerusalem%0A33 AD
+```
+
+**Custom dimensions (1600x900):**
+```
+https://mitchell360.com/map-maker/screenshot?width=1600&height=900&chronoLocationsAndLabels=...
+```
+
+**Square format for social media (1200x1200):**
+```
+https://mitchell360.com/map-maker/screenshot?width=1200&height=1200&chronoLocationsAndLabels=...
+```
+
+### Use Cases
+
+- Embed map images in documents, presentations, or emails
+- Generate thumbnails for map previews
+- Create shareable images for social media
+- Archive map snapshots
+
+### Important Notes
+
+- The screenshot captures the **default map state** (Ancient Terrain base map, no overlays enabled)
+- Layer toggles and transport mode cannot be controlled via URL - use defaults
+- Large/complex maps may take 5-10 seconds to render
+- Returns HTTP 500 if rendering fails
+
+---
+
 ## Final Validation Steps
 
 Before providing URL to user, verify:
