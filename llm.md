@@ -607,7 +607,7 @@ The custom layer panel organizes overlays into logical categories, each collapsi
 ### Route Type Selector
 When "Travel Line and Time" overlay is enabled, you can choose how the journey handles water crossings:
 - **Land Only** - Routes only on the Roman Roads network (14,993 land segments + 834 river crossings)
-- **Use Water** - Routes on both Roman Roads AND itiner-e Sea Lanes (524 sea segments) for optimal mixed land/water routing
+- **Use Water** (default) - Routes on both Roman Roads AND itiner-e Sea Lanes (524 sea segments) for optimal mixed land/water routing
 
 **Graph-Based Routing:**
 The system uses client-side Dijkstra shortest path on a preprocessed routing graph (11,031 nodes, 16,351 edges) built from the itiner-e Roman Roads dataset. This provides authentic ancient world routing without relying on external APIs.

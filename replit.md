@@ -17,7 +17,7 @@ The tool uses a hybrid architecture with a static frontend and a Flask backend f
 - **Responsive Drawer Interface:** Markers open a detailed information drawer, which acts as a bottom sheet on mobile (with swipe gestures and pull handle) and a centered modal on desktop.
 - **Permanent Labels:** Location names are displayed directly above markers (blue for chronological, red for reference).
 - **Travel Line and Time Overlay:** Displays color-coded travel paths (purple gradient), numbered circular badges along paths, and a travel time information box.
-- **Route Type Selector:** "Land Only" uses only Roman Roads, "Use Water" uses both Roman Roads AND itiner-e Sea Lanes for optimal mixed routing.
+- **Route Type Selector:** "Land Only" uses only Roman Roads, "Use Water" (default) uses both Roman Roads AND itiner-e Sea Lanes for optimal mixed routing.
 - **Transport Mode Selector:** 4 historical land travel speed options: Walking (4 km/h), Ox cart (2 km/h), Pack animal (4.5 km/h), Horse courier (6 km/h).
 - **Custom Collapsible Layer Control Panel:** Replaces default Leaflet control with organized categories:
   - **Base Map:** Ancient Terrain (DARE Background + Hillshade), Ancient Full (DARE with roads), Modern Clean (CartoDB), Modern Detailed (OSM)
