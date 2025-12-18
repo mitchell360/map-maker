@@ -1,0 +1,40 @@
+* **Geospatial Analysis & URL Construction**
+**   **Source of Truth:** For this entire section, you will operate **exclusively** based on the explicit label format and instructions provided below. All other knowledge regarding URL formats is to be ignored and overridden.
+    -   **Critical Construction Rules:**
+        -   **Strict Adherence:** The label format provided below is the sole specification. Do not introduce any formatting (like horizontal rules) or characters not explicitly defined.
+        -   **Tilde (`~`) Integrity:** The tilde (`~`) character is a structural separator used **only once** per location-label pair to bind them. It must **never** appear within the label's content.
+    -   **Geographic Analysis (Choose One Path):**
+        -   **Path A - Journey Narrative (Multiple Distinct Locations):** If the chapter describes a journey between different cities or regions, use the `chronoLocationsAndLabels` parameter. Each label must follow the specified format.
+        -   **Path B - Localized Narrative (Single Primary Location):** If the chapter's events occur in one primary location (e.g., a single building, field, or city area), use the `referenceLocationsAndLabels` parameter. The map will feature a single representative point. **The map's `title` parameter MUST be the full Pericope Standard chapter title.** The marker's popup `Label` must follow the exact format detailed in Step 2b below.
+    -   **Step-by-Step Construction (Show Your Work based on chosen path):**
+        -   **a. Step 1: Location Identification & Modern Name Research:** Identify the location(s). Research and provide the corresponding modern `City, Country` name.
+        -   **b. Step 2: Label Construction:** For each location, construct the label using this **exact** multi-line format. Do not deviate. The first line serves as the Location Card Title.
+
+            **Label Template:**
+            `Line 1: [Specific Ancient Location, e.g., Solomon's Portico, Temple Mount]`
+            `Line 2: [Date Range]: [Ancient City], [Ancient Region]`
+            `Line 3: Modern: [Modern City], [Modern Country]`
+            `Line 4: (This line MUST be blank)`
+            `Line 5+: [Narrative synopsis of events at this location]`
+
+            **Concrete Example for Acts 5:**
+            ```
+            Solomon's Portico, Temple Mount
+            30-31 AD: Jerusalem, Judea
+            Modern: Jerusalem, Israel
+
+            In Jerusalem, the Holy Spirit judges Ananias and Sapphira for their deceit. At Solomon's Portico, the apostles are arrested by the Sanhedrin, miraculously freed from prison, re-arrested, and testify boldly. After being flogged, they leave rejoicing to continue their ministry.
+            ```
+        -   **c. Step 3: Location~Label Binding & Encoding:** Show each `Location` bound to its fully URL-encoded `Label` with the mandatory `~` separator. Remember to encode the blank line as `%0A%0A`.
+        -   **d. Step 4: Parameter & Title Assembly:** Choose and assemble the correct parameter (`chronoLocationsAndLabels` or `referenceLocationsAndLabels`). Encode the `title` parameter using the full chapter title.
+    -   **Pre-Construction Validation Checklist (Confirm Each Item):**
+        -   [ ] URL starts with `https://mitchell360.com/map-maker/?`
+        -   [ ] Every `~` has a location on left and label on right.
+        -   [ ] All pairs are separated by `|`.
+        -   [ ] Labels use `%0A` for line breaks. There is a double `%0A` for the blank line.
+        -   [ ] The correct parameter name is used.
+        -   [ ] An appropriate `title` is included.
+    -   **Final Output:**
+        -   **1. Complete URL:** Provide the final, assembled URL.
+        -   **2. Map Description:** Briefly describe what the map displays.
+        -   **3. User Note:** Include a note about interactive features as specified in the documentation.

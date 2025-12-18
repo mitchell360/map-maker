@@ -2,8 +2,8 @@
 
 **Service:** Historical Map Visualization  
 **Base URL:** `https://mitchell360.com/map-maker/`  
-**Last Updated:** 2025-12-09  
-**Version:** 2.4 (Local Geocoding + Dual Route Display)
+**Last Updated:** 2025-12-18  
+**Version:** 2.5 (OSRM Fallback + OT Location Coordinates)
 
 ---
 
@@ -14,6 +14,20 @@ Locations and labels are **bound together** using the `~` (tilde) separator with
 **Key Rule:** Every location MUST be paired with its label using `~` before adding it to the URL.
 
 **Format:** `Location~Label` (bound together, then separate pairs with `|`)
+
+### 🚫 TILDE PLACEMENT RULE (READ CAREFULLY)
+
+**The `~` character appears EXACTLY ONCE per location-label pair.** It separates the location from the label. It must **NEVER** appear inside the label content.
+
+| ❌ WRONG | ✅ CORRECT |
+|----------|-----------|
+| `Rome~Rome%0A~62 AD:...` | `Rome~Rome%0A62 AD:...` |
+| `Jerusalem~Jerusalem%0A~33 AD~Judea` | `Jerusalem~Jerusalem%0A33 AD: Jerusalem, Judea` |
+
+**Inside labels, use ONLY:**
+- `%0A` for newlines
+- `%0A%0A` for blank lines
+- Regular text, numbers, punctuation (except `~` and `|`)
 
 ---
 
@@ -204,7 +218,7 @@ https://mitchell360.com/map-maker/?[parameters]
 - `%0A` = Newline within labels
 - `%0A%0A` = Blank line within labels
 
-**Location Format:** `City, Country` (e.g., `Rome, Italy` not just `Rome`)
+**Location Format:** `City, Country` (e.g., `Rome, Italy`) OR `Name@lat,lon` for ancient sites (e.g., `Midian@28.50,35.00`)
 
 **Example:**
 ```
@@ -394,13 +408,43 @@ https://mitchell360.com/map-maker/?title=Paul's%20Early%20Ministry&chronoLocatio
 
 ---
 
+### ❌ ERROR 3: Extra ~ Inside Label (COMMON LLM MISTAKE)
+
+```
+?chronoLocationsAndLabels=Miletus~Miletus%0A~57 AD: Miletus, Asia%0AModern:...
+```
+
+**Problem:** There's a `~` after `%0A` inside the label. The `~` should appear **only once** between location and label.
+
+**Correct version:**
+```
+?chronoLocationsAndLabels=Miletus~Miletus%0A57 AD: Miletus, Asia%0AModern:...
+```
+
+---
+
+### ❌ ERROR 4: Using ~ as Line Separator in Labels
+
+```
+Rome~Rome~62 AD: Rome~Roman Empire~Modern: Rome, Italy
+```
+
+**Problem:** Using `~` to separate lines. Use `%0A` for newlines instead.
+
+**Correct version:**
+```
+Rome~Rome%0A62 AD: Rome, Roman Empire%0AModern: Rome, Italy
+```
+
+---
+
 ### ✅ CORRECT: Bound Pairs with ~
 
 ```
 ?chronoLocationsAndLabels=Damascus,Syria~Damascus|Antioch,Turkey~Antioch|Rome,Italy~Rome
 ```
 
-**Why This Works:** Each location is permanently bound to its label
+**Why This Works:** Each location is permanently bound to its label with exactly ONE `~`
 
 ---
 
@@ -408,11 +452,13 @@ https://mitchell360.com/map-maker/?title=Paul's%20Early%20Ministry&chronoLocatio
 
 Before generating the URL, verify:
 
-- [ ] Every location is in `City, Country` format
+- [ ] Every location is in `City, Country` format OR uses `@lat,lon` coordinates
+- [ ] **For Old Testament/pre-Roman locations:** Coordinates are specified using `Name@lat,lon` syntax
 - [ ] Every location has a corresponding label created
-- [ ] Each location~label pair uses `~` (tilde) to bind them
+- [ ] Each location~label pair uses `~` (tilde) to bind them - **EXACTLY ONCE per pair**
+- [ ] **No `~` characters appear inside any label content** (only between location and label)
 - [ ] Multiple pairs are separated by `|` (pipe)
-- [ ] Labels use `%0A` for newlines, not actual line breaks
+- [ ] Labels use `%0A` for newlines, not actual line breaks or `~`
 - [ ] Spaces in text use `%20` (automatic in most systems)
 - [ ] The parameter name is `chronoLocationsAndLabels` for journey locations
 - [ ] Optional: Include `title` parameter for custom map title
@@ -627,15 +673,25 @@ When providing URLs to users, include:
 
 ## Tips for LLMs
 
-- ✅ **CRITICAL:** Always use `~` (tilde) to bind each location to its label
-- ✅ **MANDATORY:** Every location must have a label bound to it with `~`
-- ✅ Count mismatches are **impossible** with this format (location and label bound together)
+### Tilde (~) Rules - CRITICAL
+- ✅ **EXACTLY ONE `~`** per location-label pair (separates location from label)
+- ✅ **NEVER put `~` inside label content** - use `%0A` for newlines instead
+- ✅ **WRONG:** `Rome~Rome%0A~62 AD` — **CORRECT:** `Rome~Rome%0A62 AD`
+
+### Location Rules
 - ✅ Always specify country/region with city names (e.g., `Rome, Italy` not `Rome`)
+- ✅ **For Old Testament/pre-Roman locations:** Use `Name@lat,lon` syntax (e.g., `Midian@28.50,35.00`)
+- ✅ Vague descriptions like "Northwest Saudi Arabia" will FAIL - use coordinates instead
+
+### Label Rules
 - ✅ Use rich 5-line label format for professional, information-rich popups
 - ✅ First line of each label becomes the marker name displayed on map
 - ✅ Lines 2-3 appear in gray as historical/modern context
 - ✅ Line 5+ becomes the main description text in popup
 - ✅ Use `%0A` for line breaks, `%0A%0A` for blank lines between sections
+
+### General Rules
+- ✅ Count mismatches are **impossible** with this format (location and label bound together)
 - ✅ Chronological locations are connected by walking paths in the order specified
 - ✅ Reference locations are standalone and never connected to anything
 - ✅ Keep URLs under 8000 characters for maximum compatibility
